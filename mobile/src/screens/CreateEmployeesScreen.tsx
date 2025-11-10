@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
+import { employeeService } from '../services/api';
 import { RootState } from '../store';
 import { theme } from '../styles/theme';
 
@@ -22,7 +23,7 @@ interface Employee {
 }
 
 export default function CreateEmployeesScreen({ navigation, route }: any) {
-  const { barbershopId } = route.params;
+  const { barbershopId, isFromManage } = route.params || {};
   const token = useSelector((state: RootState) => state.auth.token);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -77,33 +78,29 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
   };
 
   const handleContinue = async () => {
+    if (employees.length === 0) {
+      Alert.alert('Erro', 'Adicione pelo menos um funcionário');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Criar funcionários
       for (const employee of employees) {
-        // Buscar userId pelo email
-        const userResponse = await fetch(`http://localhost:4000/api/auth/user-by-email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: employee.user_email })
-        });
-        const userData = await userResponse.json();
-        
-        await fetch(`http://localhost:4000/api/employees`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            phoneNumber: employee.phone_number,
-            role: employee.role,
-            userId: userData.user.id,
-            barbershopId
-          })
+        await employeeService.create({
+          phoneNumber: employee.phone_number,
+          role: employee.role,
+          userEmail: employee.user_email,
+          barbershopId
         });
       }
-      navigation.navigate('CreateSchedule', { barbershopId });
+      
+      if (isFromManage) {
+        Alert.alert('Sucesso', 'Funcionários criados com sucesso!', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        navigation.navigate('CreateSchedule', { barbershopId });
+      }
     } catch (error: any) {
       console.error('Erro ao criar funcionários:', error);
       Alert.alert('Erro', 'Não foi possível criar os funcionários');
@@ -132,10 +129,20 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
 
   return (
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
+      {isFromManage && (
+        <View style={styles.headerBar}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Adicionar Funcionários</Text>
+          <View style={{ width: 24 }} />
+        </View>
+      )}
+      
       <View style={styles.header}>
         <Ionicons name="people-outline" size={48} color={theme.colors.primary} />
         <Text style={styles.title}>Adicionar Funcionários</Text>
-        <Text style={styles.subtitle}>Opcional - você pode pular esta etapa</Text>
+        <Text style={styles.subtitle}>{isFromManage ? 'Adicione funcionários à sua barbearia' : 'Opcional - você pode pular esta etapa'}</Text>
       </View>
 
       <View style={styles.formContainer}>
@@ -231,19 +238,23 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
         )}
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-            <Text style={styles.skipButtonText}>Pular</Text>
-          </TouchableOpacity>
+          {!isFromManage && (
+            <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+              <Text style={styles.skipButtonText}>Pular</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
-            style={[styles.continueButton, loading && styles.buttonDisabled]}
+            style={[styles.continueButton, loading && styles.buttonDisabled, isFromManage && { flex: 1 }]}
             onPress={handleContinue}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color={theme.colors.background} />
             ) : (
-              <Text style={styles.buttonText}>Continuar</Text>
+              <Text style={styles.buttonText}>
+                {isFromManage ? 'Criar' : 'Continuar'}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -405,5 +416,18 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  headerTitle: {
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.text,
+    fontWeight: 'bold',
   },
 });

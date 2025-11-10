@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,12 +21,24 @@ interface Service {
 }
 
 export default function CreateServicesScreen({ navigation, route }: any) {
-  const { barbershopId } = route.params;
+  const { barbershopId, isFromManage } = route.params || {};
   const [services, setServices] = useState<Service[]>([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [timeTaken, setTimeTaken] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Recarregar a tela de gerenciar serviços quando voltar
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (isFromManage) {
+        // Limpar serviços quando entrar na tela
+        setServices([]);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, isFromManage]);
 
   const addService = () => {
     if (!name || !price || !timeTaken) {
@@ -81,7 +93,14 @@ export default function CreateServicesScreen({ navigation, route }: any) {
           barbershopId 
         });
       }
-      navigation.navigate('CreateEmployees', { barbershopId });
+      
+      if (isFromManage) {
+        Alert.alert('Sucesso', 'Serviços criados com sucesso!', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        navigation.navigate('CreateEmployees', { barbershopId });
+      }
     } catch (error: any) {
       console.error('Erro ao criar serviços:', error);
       Alert.alert('Erro', 'Não foi possível criar os serviços');
@@ -106,6 +125,16 @@ export default function CreateServicesScreen({ navigation, route }: any) {
 
   return (
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
+      {isFromManage && (
+        <View style={styles.headerBar}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Adicionar Serviços</Text>
+          <View style={{ width: 24 }} />
+        </View>
+      )}
+      
       <View style={styles.header}>
         <Ionicons name="cut-outline" size={48} color={theme.colors.primary} />
         <Text style={styles.title}>Criar Serviços</Text>
@@ -179,7 +208,7 @@ export default function CreateServicesScreen({ navigation, route }: any) {
             <ActivityIndicator color={theme.colors.background} />
           ) : (
             <Text style={styles.buttonText}>
-              Continuar ({services.length} serviço{services.length !== 1 ? 's' : ''})
+              {isFromManage ? 'Criar' : `Continuar (${services.length} serviço${services.length !== 1 ? 's' : ''})`}
             </Text>
           )}
         </TouchableOpacity>
@@ -290,5 +319,18 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  headerTitle: {
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.text,
+    fontWeight: 'bold',
   },
 });

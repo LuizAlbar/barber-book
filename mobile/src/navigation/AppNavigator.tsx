@@ -17,6 +17,8 @@ import DashboardScreen from '../screens/DashboardScreen';
 import ConfigScreen from '../screens/ConfigScreen';
 import ManageServicesScreen from '../screens/ManageServicesScreen';
 import ManageEmployeesScreen from '../screens/ManageEmployeesScreen';
+import EditBarbershopScreen from '../screens/EditBarbershopScreen';
+import EditServiceScreen from '../screens/EditServiceScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -132,6 +134,26 @@ export default function AppNavigator() {
             <Stack.Screen 
               name="ManageEmployees" 
               component={ManageEmployeesScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="EditBarbershop" 
+              component={EditBarbershopScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="CreateServices" 
+              component={CreateServicesScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="EditService" 
+              component={EditServiceScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="CreateEmployees" 
+              component={CreateEmployeesScreen}
               options={{ headerShown: false }}
             />
           </>

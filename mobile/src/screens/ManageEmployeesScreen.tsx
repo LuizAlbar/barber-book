@@ -9,22 +9,34 @@ import {
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { employeeService } from '../services/api';
 import { theme } from '../styles/theme';
 
 export default function ManageEmployeesScreen({ navigation }: any) {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Simular carregamento de funcionários
-    setTimeout(() => {
-      setEmployees([
-        { id: '1', name: 'João Silva', email: 'joao@email.com', role: 'BARBEIRO', phone: '(11) 99999-9999' },
-        { id: '2', name: 'Maria Santos', email: 'maria@email.com', role: 'ATENDENTE', phone: '(11) 88888-8888' },
-      ]);
+  const loadEmployees = async () => {
+    try {
+      const response = await employeeService.list('716f3577-4b85-4e25-977d-f0cfa2f4b356');
+      setEmployees(response.employees || []);
+    } catch (error) {
+      console.error('Erro ao carregar funcionários:', error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+
+  useEffect(() => {
+    loadEmployees();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadEmployees();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const renderEmployee = ({ item }: { item: any }) => (
     <View style={styles.employeeCard}>
@@ -49,7 +61,7 @@ export default function ManageEmployeesScreen({ navigation }: any) {
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Funcionários</Text>
-        <TouchableOpacity onPress={() => Alert.alert('Adicionar', 'Funcionalidade em desenvolvimento')}>
+        <TouchableOpacity onPress={() => navigation.navigate('CreateEmployees', { barbershopId: '716f3577-4b85-4e25-977d-f0cfa2f4b356', isFromManage: true })}>
           <Ionicons name="person-add" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>

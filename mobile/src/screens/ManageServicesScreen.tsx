@@ -4,9 +4,8 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
-  Alert,
   FlatList,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { serviceService } from '../services/api';
@@ -15,10 +14,13 @@ import { theme } from '../styles/theme';
 export default function ManageServicesScreen({ navigation }: any) {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<{id: string, name: string} | null>(null);
 
   const loadServices = async () => {
     try {
       const response = await serviceService.list('716f3577-4b85-4e25-977d-f0cfa2f4b356');
+      console.log('Serviços carregados:', response.services);
       setServices(response.services || []);
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
@@ -31,27 +33,35 @@ export default function ManageServicesScreen({ navigation }: any) {
     loadServices();
   }, []);
 
+  // Recarregar quando voltar de outras telas
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadServices();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const handleDeleteService = (id: string, name: string) => {
-    Alert.alert(
-      'Excluir Serviço',
-      `Tem certeza que deseja excluir "${name}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await serviceService.delete(id);
-              loadServices();
-              Alert.alert('Sucesso', 'Serviço excluído com sucesso!');
-            } catch (error) {
-              Alert.alert('Erro', 'Não foi possível excluir o serviço');
-            }
-          },
-        },
-      ]
-    );
+    setServiceToDelete({ id, name });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (serviceToDelete) {
+      await deleteService(serviceToDelete.id);
+      setShowDeleteModal(false);
+      setServiceToDelete(null);
+    }
+  };
+
+  const deleteService = async (id: string) => {
+    try {
+      await serviceService.delete(id);
+      loadServices();
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+    }
   };
 
   const renderService = ({ item }: { item: any }) => (
@@ -59,19 +69,28 @@ export default function ManageServicesScreen({ navigation }: any) {
       <View style={styles.serviceInfo}>
         <Text style={styles.serviceName}>{item.name}</Text>
         <Text style={styles.serviceDetails}>
-          R$ {item.price.toFixed(2).replace('.', ',')} • {item.timeTaken} min
+          R$ {item.price.toFixed(2).replace('.', ',')} • {item.timeTaken || item.time_taken} min
         </Text>
       </View>
       <View style={styles.serviceActions}>
         <TouchableOpacity
           style={styles.editButton}
-          onPress={() => Alert.alert('Editar', 'Funcionalidade em desenvolvimento')}
+          onPress={() => navigation.navigate('EditService', {
+            serviceId: item.id,
+            serviceName: item.name,
+            servicePrice: item.price,
+            serviceTimeTaken: item.timeTaken || item.time_taken
+          })}
         >
           <Ionicons name="pencil" size={20} color={theme.colors.primary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => handleDeleteService(item.id, item.name)}
+          onPress={() => {
+            console.log('Botão excluir clicado!');
+            handleDeleteService(item.id, item.name);
+          }}
+          activeOpacity={0.7}
         >
           <Ionicons name="trash" size={20} color={theme.colors.error} />
         </TouchableOpacity>
@@ -86,7 +105,7 @@ export default function ManageServicesScreen({ navigation }: any) {
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Gerenciar Serviços</Text>
-        <TouchableOpacity onPress={() => Alert.alert('Adicionar', 'Funcionalidade em desenvolvimento')}>
+        <TouchableOpacity onPress={() => navigation.navigate('CreateServices', { barbershopId: '716f3577-4b85-4e25-977d-f0cfa2f4b356', isFromManage: true })}>
           <Ionicons name="add" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
@@ -108,6 +127,35 @@ export default function ManageServicesScreen({ navigation }: any) {
           contentContainerStyle={styles.list}
         />
       )}
+
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Excluir Serviço</Text>
+            <Text style={styles.modalText}>
+              Tem certeza que deseja excluir "{serviceToDelete?.name}"?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowDeleteModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteModalButton}
+                onPress={confirmDelete}
+              >
+                <Text style={styles.deleteButtonText}>Excluir</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -164,6 +212,10 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: theme.spacing.sm,
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyState: {
     flex: 1,
@@ -174,5 +226,57 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: theme.fontSize.md,
     marginTop: theme.spacing.md,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    margin: theme.spacing.lg,
+    minWidth: 280,
+  },
+  modalTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+  },
+  modalText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.lg,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelButton: {
+    flex: 1,
+    padding: theme.spacing.md,
+    marginRight: theme.spacing.sm,
+    backgroundColor: '#666',
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: theme.colors.text,
+    fontWeight: 'bold',
+  },
+  deleteModalButton: {
+    flex: 1,
+    padding: theme.spacing.md,
+    marginLeft: theme.spacing.sm,
+    backgroundColor: theme.colors.error,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });

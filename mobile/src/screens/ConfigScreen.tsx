@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDispatch } from 'react-redux';
 import { logout } from '../store/authSlice';
@@ -8,23 +8,16 @@ import { theme } from '../styles/theme';
 
 export default function ConfigScreen({ navigation }: any) {
   const dispatch = useDispatch();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sair',
-      'Tem certeza que deseja sair?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: () => {
-            setAuthToken(null);
-            dispatch(logout());
-          },
-        },
-      ]
-    );
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setAuthToken(null);
+    dispatch(logout());
+    setShowLogoutModal(false);
   };
 
   return (
@@ -34,7 +27,7 @@ export default function ConfigScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>Dados da Barbearia</Text>
           <TouchableOpacity 
             style={styles.menuItem}
-            onPress={() => Alert.alert('Editar Barbearia', 'Tela de edição em desenvolvimento')}
+            onPress={() => navigation.navigate('EditBarbershop')}
             activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
@@ -86,7 +79,7 @@ export default function ConfigScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>Conta</Text>
           <TouchableOpacity 
             style={styles.menuItem}
-            onPress={() => Alert.alert('Meu Perfil', 'Navegar para tela de edição do perfil')}
+            onPress={() => Alert.alert('Meu Perfil', 'Tela de edição em desenvolvimento')}
             activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
@@ -124,6 +117,35 @@ export default function ConfigScreen({ navigation }: any) {
           <Text style={[styles.navLabel, { color: theme.colors.primary }]}>Config</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={showLogoutModal}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Sair</Text>
+            <Text style={styles.modalText}>
+              Tem certeza que deseja sair?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={confirmLogout}
+              >
+                <Text style={styles.logoutButtonText}>Sair</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -180,5 +202,57 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: theme.fontSize.sm,
     marginTop: theme.spacing.xs,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    margin: theme.spacing.lg,
+    minWidth: 280,
+  },
+  modalTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+  },
+  modalText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.lg,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelButton: {
+    flex: 1,
+    padding: theme.spacing.md,
+    marginRight: theme.spacing.sm,
+    backgroundColor: '#666',
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: theme.colors.text,
+    fontWeight: 'bold',
+  },
+  logoutButton: {
+    flex: 1,
+    padding: theme.spacing.md,
+    marginLeft: theme.spacing.sm,
+    backgroundColor: theme.colors.error,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
