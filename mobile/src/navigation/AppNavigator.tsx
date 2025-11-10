@@ -3,17 +3,26 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import HeaderNavigation from '../components/HeaderNavigation';
 
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
+import WelcomeScreen from '../screens/WelcomeScreen';
+import CreateBarbershopScreen from '../screens/CreateBarbershopScreen';
+import CreateServicesScreen from '../screens/CreateServicesScreen';
+import CreateEmployeesScreen from '../screens/CreateEmployeesScreen';
+import CreateScheduleScreen from '../screens/CreateScheduleScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import ConfigScreen from '../screens/ConfigScreen';
+import ManageServicesScreen from '../screens/ManageServicesScreen';
+import ManageEmployeesScreen from '../screens/ManageEmployeesScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const needsOnboarding = useSelector((state: RootState) => state.auth.needsOnboarding);
 
   return (
     <NavigationContainer>
@@ -41,22 +50,89 @@ export default function AppNavigator() {
               options={{ headerShown: false }}
             />
           </>
+        ) : needsOnboarding ? (
+          <>
+            <Stack.Screen 
+              name="Welcome" 
+              component={WelcomeScreen}
+              options={{ 
+                title: 'Bem-vindo',
+                headerLeft: () => null,
+                gestureEnabled: false,
+              }}
+            />
+            <Stack.Screen 
+              name="CreateBarbershop" 
+              component={CreateBarbershopScreen}
+              options={{ 
+                title: 'Criar Barbearia',
+                headerLeft: () => null,
+                gestureEnabled: false,
+              }}
+            />
+            <Stack.Screen 
+              name="CreateServices" 
+              component={CreateServicesScreen}
+              options={{ 
+                title: 'Adicionar Serviços',
+                headerLeft: () => null,
+                gestureEnabled: false,
+              }}
+            />
+            <Stack.Screen 
+              name="CreateEmployees" 
+              component={CreateEmployeesScreen}
+              options={{ 
+                title: 'Adicionar Funcionários',
+                headerLeft: () => null,
+                gestureEnabled: false,
+              }}
+            />
+            <Stack.Screen 
+              name="CreateSchedule" 
+              component={CreateScheduleScreen}
+              options={{ 
+                title: 'Configurar Horários',
+                headerLeft: () => null,
+                gestureEnabled: false,
+              }}
+            />
+          </>
         ) : (
           <>
             <Stack.Screen 
               name="Appointments" 
               component={AppointmentsScreen}
-              options={{ title: 'Agendamentos' }}
+              options={({ navigation }) => ({
+                title: 'Agendamentos',
+                headerRight: () => <HeaderNavigation navigation={navigation} currentScreen="Appointments" />
+              })}
             />
             <Stack.Screen 
               name="Dashboard" 
               component={DashboardScreen}
-              options={{ title: 'Dashboard' }}
+              options={({ navigation }) => ({
+                title: 'Dashboard',
+                headerRight: () => <HeaderNavigation navigation={navigation} currentScreen="Dashboard" />
+              })}
             />
             <Stack.Screen 
               name="Config" 
               component={ConfigScreen}
-              options={{ title: 'Configurações' }}
+              options={({ navigation }) => ({
+                title: 'Configurações',
+                headerRight: () => <HeaderNavigation navigation={navigation} currentScreen="Config" />
+              })}
+            />
+            <Stack.Screen 
+              name="ManageServices" 
+              component={ManageServicesScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="ManageEmployees" 
+              component={ManageEmployeesScreen}
+              options={{ headerShown: false }}
             />
           </>
         )}

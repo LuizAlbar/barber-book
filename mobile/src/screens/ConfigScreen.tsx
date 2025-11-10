@@ -32,7 +32,11 @@ export default function ConfigScreen({ navigation }: any) {
       <ScrollView style={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Dados da Barbearia</Text>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => Alert.alert('Editar Barbearia', 'Tela de edição em desenvolvimento')}
+            activeOpacity={0.7}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="business-outline" size={24} color={theme.colors.primary} />
               <Text style={styles.menuItemText}>Editar Barbearia</Text>
@@ -43,21 +47,33 @@ export default function ConfigScreen({ navigation }: any) {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Gerenciar</Text>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('ManageServices')}
+            activeOpacity={0.7}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="cut-outline" size={24} color={theme.colors.primary} />
               <Text style={styles.menuItemText}>Serviços</Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#999" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('ManageEmployees')}
+            activeOpacity={0.7}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="people-outline" size={24} color={theme.colors.primary} />
               <Text style={styles.menuItemText}>Funcionários</Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#999" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => Alert.alert('Horários', 'Tela de configuração em desenvolvimento')}
+            activeOpacity={0.7}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="time-outline" size={24} color={theme.colors.primary} />
               <Text style={styles.menuItemText}>Horários de Funcionamento</Text>
@@ -68,14 +84,18 @@ export default function ConfigScreen({ navigation }: any) {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Conta</Text>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => Alert.alert('Meu Perfil', 'Navegar para tela de edição do perfil')}
+            activeOpacity={0.7}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="person-outline" size={24} color={theme.colors.primary} />
               <Text style={styles.menuItemText}>Meu Perfil</Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#999" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleLogout} activeOpacity={0.7}>
             <View style={styles.menuItemLeft}>
               <Ionicons name="log-out-outline" size={24} color={theme.colors.error} />
               <Text style={[styles.menuItemText, { color: theme.colors.error }]}>Sair</Text>

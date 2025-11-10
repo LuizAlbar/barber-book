@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { authRoutes } from './routes/auth.routes.js';
@@ -33,7 +34,7 @@ await app.register(appointmentRoutes, { prefix: '/api/appointments' });
 await app.register(capitalRoutes, { prefix: '/api/capital' });
 await app.register(scheduleRoutes, { prefix: '/api/schedules' });
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 4000;
 const HOST = '0.0.0.0';
 
 try {

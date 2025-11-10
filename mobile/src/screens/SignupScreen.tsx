@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDispatch } from 'react-redux';
-import { authService, setAuthToken } from '../services/api';
+import { authService, setAuthToken, testConnection } from '../services/api';
 import { setCredentials } from '../store/authSlice';
 import { theme } from '../styles/theme';
 
@@ -24,31 +24,83 @@ export default function SignupScreen({ navigation }: any) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   const dispatch = useDispatch();
 
+  useEffect(() => {
+    checkConnection();
+  }, []);
+
+  const checkConnection = async () => {
+    setConnectionStatus('checking');
+    const isConnected = await testConnection();
+    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+  };
+
   const handleSignup = async () => {
+    console.log('🔥 BOTÃO CADASTRAR CLICADO!');
+    console.log('📊 Estado atual:', { name, email, password, confirmPassword, loading, connectionStatus });
+    
     if (!name || !email || !password || !confirmPassword) {
+      console.log('❌ Campos vazios detectados');
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
+    console.log('✅ Todos os campos preenchidos');
+
+    if (name.length < 2) {
+      console.log('❌ Nome muito curto');
+      Alert.alert('Erro', 'Nome deve ter pelo menos 2 caracteres');
+      return;
+    }
+    console.log('✅ Nome válido');
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log('❌ Email inválido');
+      Alert.alert('Erro', 'Digite um email válido (ex: usuario@email.com)');
+      return;
+    }
+    console.log('✅ Email válido');
 
     if (password !== confirmPassword) {
+      console.log('❌ Senhas não coincidem');
       Alert.alert('Erro', 'As senhas não coincidem');
       return;
     }
+    console.log('✅ Senhas coincidem');
 
     if (password.length < 6) {
+      console.log('❌ Senha muito curta');
       Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
       return;
     }
+    console.log('✅ Senha válida');
 
+    console.log('📝 Iniciando processo de cadastro...');
     setLoading(true);
+    
     try {
       const response = await authService.signup({ name, email, password });
       setAuthToken(response.token);
       dispatch(setCredentials({ user: response.user, token: response.token }));
+      console.log('✅ Cadastro realizado com sucesso, redirecionando...');
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.message || 'Erro ao criar conta');
+      console.error('❌ Erro no cadastro:', error);
+      
+      let errorMessage = 'Erro ao criar conta';
+      
+      if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
+        errorMessage = 'Erro de conexão. Verifique sua internet e se o servidor está rodando.';
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Timeout na conexão. Tente novamente.';
+      } else if (error.response?.status === 409) {
+        errorMessage = 'Este email já está cadastrado.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      Alert.alert('Erro no Cadastro', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -127,13 +179,46 @@ export default function SignupScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleSignup} disabled={loading}>
+        {connectionStatus === 'disconnected' && (
+          <View style={styles.connectionWarning}>
+            <Ionicons name="warning-outline" size={20} color={theme.colors.warning} />
+            <Text style={styles.connectionWarningText}>
+              Sem conexão com o servidor. 
+            </Text>
+            <TouchableOpacity onPress={checkConnection}>
+              <Text style={styles.retryText}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <TouchableOpacity 
+          style={[styles.button, (loading || connectionStatus === 'disconnected') && styles.buttonDisabled]} 
+          onPress={() => {
+            console.log('🎯 TouchableOpacity pressionado!');
+            handleSignup();
+          }} 
+          disabled={loading || connectionStatus === 'disconnected'}
+        >
           {loading ? (
             <ActivityIndicator color={theme.colors.background} />
           ) : (
             <Text style={styles.buttonText}>Cadastrar</Text>
           )}
         </TouchableOpacity>
+
+        {connectionStatus === 'checking' && (
+          <View style={styles.connectionStatus}>
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+            <Text style={styles.connectionStatusText}>Verificando conexão...</Text>
+          </View>
+        )}
+
+        {connectionStatus === 'connected' && (
+          <View style={styles.connectionStatus}>
+            <Ionicons name="checkmark-circle-outline" size={16} color={theme.colors.success} />
+            <Text style={[styles.connectionStatusText, { color: theme.colors.success }]}>Conectado ao servidor</Text>
+          </View>
+        )}
 
         <TouchableOpacity
           style={styles.loginLink}
@@ -214,5 +299,39 @@ const styles = StyleSheet.create({
   loginLinkBold: {
     color: theme.colors.primary,
     fontWeight: 'bold',
+  },
+  connectionWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.warning + '20',
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.md,
+  },
+  connectionWarningText: {
+    color: theme.colors.warning,
+    fontSize: theme.fontSize.sm,
+    marginLeft: theme.spacing.xs,
+    flex: 1,
+  },
+  retryText: {
+    color: theme.colors.primary,
+    fontSize: theme.fontSize.sm,
+    fontWeight: 'bold',
+  },
+  buttonDisabled: {
+    backgroundColor: theme.colors.card,
+    opacity: 0.6,
+  },
+  connectionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing.sm,
+  },
+  connectionStatusText: {
+    color: theme.colors.text,
+    fontSize: theme.fontSize.sm,
+    marginLeft: theme.spacing.xs,
   },
 });

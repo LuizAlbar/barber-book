@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -131,7 +131,7 @@ model Capital {
 
 model BarberSchedule {
   id           String         @id @default(uuid())
-  daysOfWeek   Int[]          @map("days_of_week")
+  daysOfWeek   String         @map("days_of_week")
   openTime     String         @map("open_time")
   closeTime    String         @map("close_time")
   createdAt    DateTime       @default(now())

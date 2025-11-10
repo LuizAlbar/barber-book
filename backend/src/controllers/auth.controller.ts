@@ -42,14 +42,25 @@ export async function signup(
         id: true,
         name: true,
         email: true,
-        createdAt: true
+        createdAt: true,
+        barbershops: {
+          select: {
+            id: true
+          }
+        }
       }
     });
 
     const token = generateToken({ userId: user.id, email: user.email });
 
     return reply.status(201).send({
-      user,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+        hasBarbershop: user.barbershops.length > 0
+      },
       token
     });
   } catch (error) {
@@ -77,7 +88,14 @@ export async function login(
     const { email, password } = validation.data;
 
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: {
+        barbershops: {
+          select: {
+            id: true
+          }
+        }
+      }
     });
 
     if (!user) {
@@ -103,7 +121,8 @@ export async function login(
         id: user.id,
         name: user.name,
         email: user.email,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        hasBarbershop: user.barbershops.length > 0
       },
       token
     });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDispatch } from 'react-redux';
-import { authService, setAuthToken } from '../services/api';
+import { authService, setAuthToken, testConnection } from '../services/api';
 import { setCredentials } from '../store/authSlice';
 import { theme } from '../styles/theme';
 
@@ -20,7 +20,18 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    checkConnection();
+  }, []);
+
+  const checkConnection = async () => {
+    setConnectionStatus('checking');
+    const isConnected = await testConnection();
+    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -28,13 +39,30 @@ export default function LoginScreen({ navigation }: any) {
       return;
     }
 
+    console.log('🔐 Iniciando processo de login...');
     setLoading(true);
+    
     try {
       const response = await authService.login({ email, password });
       setAuthToken(response.token);
       dispatch(setCredentials({ user: response.user, token: response.token }));
+      console.log('✅ Login realizado com sucesso, redirecionando...');
     } catch (error: any) {
-      Alert.alert('Erro', error.response?.data?.message || 'Erro ao fazer login');
+      console.error('❌ Erro no login:', error);
+      
+      let errorMessage = 'Erro ao fazer login';
+      
+      if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
+        errorMessage = 'Erro de conexão. Verifique sua internet e se o servidor está rodando.';
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Timeout na conexão. Tente novamente.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Email ou senha incorretos.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      Alert.alert('Erro no Login', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -83,7 +111,23 @@ export default function LoginScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+        {connectionStatus === 'disconnected' && (
+          <View style={styles.connectionWarning}>
+            <Ionicons name="warning-outline" size={20} color={theme.colors.warning} />
+            <Text style={styles.connectionWarningText}>
+              Sem conexão com o servidor. 
+            </Text>
+            <TouchableOpacity onPress={checkConnection}>
+              <Text style={styles.retryText}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <TouchableOpacity 
+          style={[styles.button, connectionStatus === 'disconnected' && styles.buttonDisabled]} 
+          onPress={handleLogin} 
+          disabled={loading || connectionStatus === 'disconnected'}
+        >
           {loading ? (
             <ActivityIndicator color={theme.colors.background} />
           ) : (
@@ -94,6 +138,20 @@ export default function LoginScreen({ navigation }: any) {
         <TouchableOpacity style={styles.forgotPassword}>
           <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
         </TouchableOpacity>
+
+        {connectionStatus === 'checking' && (
+          <View style={styles.connectionStatus}>
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+            <Text style={styles.connectionStatusText}>Verificando conexão...</Text>
+          </View>
+        )}
+
+        {connectionStatus === 'connected' && (
+          <View style={styles.connectionStatus}>
+            <Ionicons name="checkmark-circle-outline" size={16} color={theme.colors.success} />
+            <Text style={[styles.connectionStatusText, { color: theme.colors.success }]}>Conectado ao servidor</Text>
+          </View>
+        )}
 
         <TouchableOpacity
           style={styles.signupLink}
@@ -179,5 +237,39 @@ const styles = StyleSheet.create({
   signupLinkBold: {
     color: theme.colors.primary,
     fontWeight: 'bold',
+  },
+  connectionWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.warning + '20',
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.md,
+  },
+  connectionWarningText: {
+    color: theme.colors.warning,
+    fontSize: theme.fontSize.sm,
+    marginLeft: theme.spacing.xs,
+    flex: 1,
+  },
+  retryText: {
+    color: theme.colors.primary,
+    fontSize: theme.fontSize.sm,
+    fontWeight: 'bold',
+  },
+  buttonDisabled: {
+    backgroundColor: theme.colors.card,
+    opacity: 0.6,
+  },
+  connectionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing.sm,
+  },
+  connectionStatusText: {
+    color: theme.colors.text,
+    fontSize: theme.fontSize.sm,
+    marginLeft: theme.spacing.xs,
   },
 });
