@@ -31,7 +31,7 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
   const [role, setRole] = useState<'BARBEIRO' | 'ATENDENTE'>('BARBEIRO');
   const [loading, setLoading] = useState(false);
 
-  const addEmployee = async () => {
+  const addEmployee = () => {
     if (!phoneNumber || !userEmail) {
       Alert.alert('Erro', 'Preencha todos os campos do funcionário');
       return;
@@ -40,23 +40,6 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userEmail)) {
       Alert.alert('Erro', 'Digite um email válido');
-      return;
-    }
-
-    try {
-      // Verificar se o usuário existe
-      const response = await fetch(`http://localhost:4000/api/auth/check-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail })
-      });
-      
-      if (!response.ok) {
-        Alert.alert('Erro', 'Este email não está cadastrado no sistema. O usuário precisa se cadastrar primeiro.');
-        return;
-      }
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível verificar o email');
       return;
     }
 

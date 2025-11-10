@@ -64,7 +64,7 @@ export default function ConfigScreen({ navigation }: any) {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.menuItem}
-            onPress={() => Alert.alert('Horários', 'Tela de configuração em desenvolvimento')}
+            onPress={() => navigation.navigate('ManageSchedule')}
             activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
@@ -79,7 +79,7 @@ export default function ConfigScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>Conta</Text>
           <TouchableOpacity 
             style={styles.menuItem}
-            onPress={() => Alert.alert('Meu Perfil', 'Tela de edição em desenvolvimento')}
+            onPress={() => navigation.navigate('EditProfile')}
             activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
@@ -146,6 +146,8 @@ export default function ConfigScreen({ navigation }: any) {
           </View>
         </View>
       </Modal>
+
+
     </View>
   );
 }

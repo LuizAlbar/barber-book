@@ -174,3 +174,42 @@ export async function getProfile(
     });
   }
 }
+
+export async function updateProfile(
+  request: FastifyRequest<{ Body: { name: string; phone?: string } }>,
+  reply: FastifyReply
+) {
+  try {
+    const { name, phone } = request.body;
+
+    if (!name?.trim()) {
+      return reply.status(400).send({
+        error: 'Validation Error',
+        message: 'Name is required'
+      });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: request.userId },
+      data: {
+        name: name.trim(),
+        phone: phone?.trim() || null
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        createdAt: true
+      }
+    });
+
+    return reply.send({ user });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    return reply.status(500).send({
+      error: 'Internal Server Error',
+      message: 'Failed to update profile'
+    });
+  }
+}

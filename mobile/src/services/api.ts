@@ -226,3 +226,14 @@ export const employeeService = {
     await api.delete(`/employees/${id}`);
   },
 };
+
+export const scheduleService = {
+  create: async (data: any) => {
+    const response = await api.post('/schedules', data);
+    return response.data;
+  },
+  list: async (barbershopId: string) => {
+    const response = await api.get(`/schedules?barbershopId=${barbershopId}`);
+    return response.data;
+  },
+};

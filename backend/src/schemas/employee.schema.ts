@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const createEmployeeSchema = z.object({
   phoneNumber: z.string().min(10),
   role: z.enum(['BARBEIRO', 'ATENDENTE']),
-  userId: z.string().uuid(),
+  userEmail: z.string().email(),
   barbershopId: z.string().uuid()
 });
 

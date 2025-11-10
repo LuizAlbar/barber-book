@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { setAuthToken } from '../services/api';
 import HeaderNavigation from '../components/HeaderNavigation';
 
 import LoginScreen from '../screens/LoginScreen';
@@ -19,12 +20,21 @@ import ManageServicesScreen from '../screens/ManageServicesScreen';
 import ManageEmployeesScreen from '../screens/ManageEmployeesScreen';
 import EditBarbershopScreen from '../screens/EditBarbershopScreen';
 import EditServiceScreen from '../screens/EditServiceScreen';
+import ManageScheduleScreen from '../screens/ManageScheduleScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const needsOnboarding = useSelector((state: RootState) => state.auth.needsOnboarding);
+  const token = useSelector((state: RootState) => state.auth.token);
+
+  useEffect(() => {
+    if (token) {
+      setAuthToken(token);
+    }
+  }, [token]);
 
   return (
     <NavigationContainer>
@@ -154,6 +164,16 @@ export default function AppNavigator() {
             <Stack.Screen 
               name="CreateEmployees" 
               component={CreateEmployeesScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="ManageSchedule" 
+              component={ManageScheduleScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="EditProfile" 
+              component={EditProfileScreen}
               options={{ headerShown: false }}
             />
           </>

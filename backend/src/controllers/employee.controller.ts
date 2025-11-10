@@ -29,8 +29,25 @@ export async function create(
       });
     }
 
+    // Buscar usuário pelo email
+    const user = await prisma.user.findUnique({
+      where: { email: validation.data.userEmail }
+    });
+
+    if (!user) {
+      return reply.status(400).send({
+        error: 'Bad Request',
+        message: 'Usuário com este email não encontrado'
+      });
+    }
+
     const employee = await prisma.employee.create({
-      data: validation.data,
+      data: {
+        phoneNumber: validation.data.phoneNumber,
+        role: validation.data.role,
+        userId: user.id,
+        barbershopId: validation.data.barbershopId
+      },
       include: {
         user: {
           select: {
