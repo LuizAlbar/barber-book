@@ -146,6 +146,7 @@ export async function getProfile(
         id: true,
         name: true,
         email: true,
+        phone: true,
         createdAt: true,
         barbershops: {
           select: {

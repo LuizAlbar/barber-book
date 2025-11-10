@@ -14,12 +14,20 @@ export default function EditProfileScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setName(user.name || '');
-      setEmail(user.email || '');
-      setPhone(user.phone || '');
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const response = await api.get('/auth/profile');
+      const userData = response.data.user;
+      setName(userData.name || '');
+      setEmail(userData.email || '');
+      setPhone(userData.phone || '');
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error);
     }
-  }, [user]);
+  };
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -31,6 +39,7 @@ export default function EditProfileScreen({ navigation }: any) {
     try {
       await api.put('/auth/profile', {
         name: name.trim(),
+        email: email.trim(),
         phone: phone.trim()
       });
       Alert.alert('Sucesso', 'Perfil atualizado com sucesso');
