@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(uuid())
+  name          String
+  email         String       @unique
+  password      String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  barbershops   Barbershop[]
+  employees     Employee[]
+  
+  @@map("users")
+}
+
+model Barbershop {
+  id               String            @id @default(uuid())
+  name             String
+  fullAddress      String            @map("full_address")
+  neighborhood     String
+  referencePoint   String?           @map("reference_point")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  
+  ownerId          String            @map("owner_id")
+  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  employees        Employee[]
+  services         Service[]
+  capital          Capital[]
+  barberSchedules  BarberSchedule[]
+  
+  @@map("barbershops")
+}
+
+enum EmployeeRole {
+  BARBEIRO
+  ATENDENTE
+}
+
+model Employee {
+  id            String       @id @default(uuid())
+  phoneNumber   String       @map("phone_number")
+  role          EmployeeRole
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  userId        String       @map("user_id")
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  barbershopId  String       @map("barbershop_id")
+  barbershop    Barbershop   @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  
+  appointments  Appointment[]
+  
+  @@map("employees")
+}
+
+model Service {
+  id            String       @id @default(uuid())
+  name          String
+  price         Float
+  timeTaken     Int          @map("time_taken")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  barbershopId  String       @map("barbershop_id")
+  barbershop    Barbershop   @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  
+  appointments  Appointment[]
+  
+  @@map("services")
+}
+
+enum AppointmentStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Appointment {
+  id            String            @id @default(uuid())
+  clientName    String            @map("client_name")
+  clientContact String            @map("client_contact")
+  datetime      DateTime
+  status        AppointmentStatus @default(PENDING)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  employeeId    String            @map("employee_id")
+  employee      Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  serviceId     String            @map("service_id")
+  service       Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  capitalId     String?           @unique @map("capital_id")
+  capital       Capital?          @relation(fields: [capitalId], references: [id])
+  
+  @@map("appointments")
+}
+
+enum CapitalType {
+  PROFIT
+  COST
+}
+
+model Capital {
+  id            String       @id @default(uuid())
+  value         Float
+  type          CapitalType
+  datetime      DateTime     @default(now())
+  description   String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  barbershopId  String       @map("barbershop_id")
+  barbershop    Barbershop   @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  
+  appointment   Appointment?
+  
+  @@map("capital")
+}
+
+model BarberSchedule {
+  id           String         @id @default(uuid())
+  daysOfWeek   Int[]          @map("days_of_week")
+  openTime     String         @map("open_time")
+  closeTime    String         @map("close_time")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  
+  barbershopId String         @map("barbershop_id")
+  barbershop   Barbershop     @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  
+  breakingTimes BreakingTime[]
+  
+  @@map("barber_schedules")
+}
+
+model BreakingTime {
+  id              String         @id @default(uuid())
+  startingTime    String         @map("starting_time")
+  endingTime      String         @map("ending_time")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  scheduleId      String         @map("schedule_id")
+  schedule        BarberSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  
+  @@map("breaking_times")
+}
