@@ -3,9 +3,10 @@ import { create, list, updateStatus } from '../controllers/appointment.controlle
 import { authMiddleware } from '../middleware/auth.js';
 
 export async function appointmentRoutes(app: FastifyInstance) {
-  app.addHook('preHandler', authMiddleware);
-
+  // Rota pública para clientes criarem agendamentos
   app.post('/', create);
-  app.get('/', list);
-  app.patch('/:id/status', updateStatus);
+  
+  // Rotas protegidas para barbeiros/funcionários
+  app.get('/', { preHandler: authMiddleware }, list);
+  app.patch('/:id/status', { preHandler: authMiddleware }, updateStatus);
 }

@@ -170,14 +170,18 @@ export const appointmentService = {
     const response = await api.post('/appointments', data);
     return response.data;
   },
-  list: async (barbershopId: string, date?: string, page = 1) => {
-    const params = new URLSearchParams({ barbershopId, page: page.toString() });
-    if (date) params.append('date', date);
-    const response = await api.get(`/appointments?${params}`);
+  list: async (params: { barbershopId: string; date?: string; page?: number; employeeId?: string }) => {
+    const queryParams = new URLSearchParams({ 
+      barbershopId: params.barbershopId, 
+      page: (params.page || 1).toString() 
+    });
+    if (params.date) queryParams.append('date', params.date);
+    if (params.employeeId) queryParams.append('employeeId', params.employeeId);
+    const response = await api.get(`/appointments?${queryParams}`);
     return response.data;
   },
-  updateStatus: async (id: string, status: string) => {
-    const response = await api.patch(`/appointments/${id}/status`, { status });
+  updateStatus: async (id: string, data: { status: string }) => {
+    const response = await api.patch(`/appointments/${id}/status`, data);
     return response.data;
   },
 };
@@ -192,6 +196,9 @@ export const capitalService = {
     if (type) params.append('type', type);
     const response = await api.get(`/capital?${params}`);
     return response.data;
+  },
+  delete: async (id: string) => {
+    await api.delete(`/capital/${id}`);
   },
 };
 

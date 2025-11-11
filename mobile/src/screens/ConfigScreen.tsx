@@ -22,6 +22,22 @@ export default function ConfigScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>Configurações</Text>
+          <Text style={styles.headerDate}>
+            {new Date().toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </Text>
+        </View>
+        <TouchableOpacity>
+          <Ionicons name="settings-outline" size={32} color={theme.colors.primary} />
+        </TouchableOpacity>
+      </View>
+      
       <ScrollView style={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Dados da Barbearia</Text>
@@ -156,6 +172,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  headerTitle: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  headerDate: {
+    fontSize: theme.fontSize.sm,
+    color: '#999',
+    marginTop: theme.spacing.xs,
   },
   content: {
     flex: 1,

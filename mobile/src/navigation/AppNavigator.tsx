@@ -115,26 +115,17 @@ export default function AppNavigator() {
             <Stack.Screen 
               name="Appointments" 
               component={AppointmentsScreen}
-              options={({ navigation }) => ({
-                title: 'Agendamentos',
-                headerRight: () => <HeaderNavigation navigation={navigation} currentScreen="Appointments" />
-              })}
+              options={{ headerShown: false }}
             />
             <Stack.Screen 
               name="Dashboard" 
               component={DashboardScreen}
-              options={({ navigation }) => ({
-                title: 'Dashboard',
-                headerRight: () => <HeaderNavigation navigation={navigation} currentScreen="Dashboard" />
-              })}
+              options={{ headerShown: false }}
             />
             <Stack.Screen 
               name="Config" 
               component={ConfigScreen}
-              options={({ navigation }) => ({
-                title: 'Configurações',
-                headerRight: () => <HeaderNavigation navigation={navigation} currentScreen="Config" />
-              })}
+              options={{ headerShown: false }}
             />
             <Stack.Screen 
               name="ManageServices" 

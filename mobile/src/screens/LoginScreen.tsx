@@ -71,7 +71,7 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/icon.png')}
+        source={require('../../assets/logo.png')}
         style={styles.logo}
         resizeMode="contain"
       />
@@ -175,8 +175,8 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 180,
+    height: 180,
     marginBottom: theme.spacing.xl,
   },
   formContainer: {

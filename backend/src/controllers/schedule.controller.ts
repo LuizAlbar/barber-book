@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { CreateScheduleInput, createScheduleSchema } from '../schemas/schedule.schema.js';
+import { formatZodError } from '../utils/validation.js';
 
 export async function create(
   request: FastifyRequest<{ Body: CreateScheduleInput }>,
@@ -9,10 +10,7 @@ export async function create(
   try {
     const validation = createScheduleSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({
-        error: 'Validation Error',
-        message: validation.error.errors
-      });
+      return reply.status(400).send(formatZodError(validation.error));
     }
     
     const { breakingTimes, ...scheduleData } = validation.data;

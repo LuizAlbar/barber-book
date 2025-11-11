@@ -109,7 +109,7 @@ export default function SignupScreen({ navigation }: any) {
   return (
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
       <Image
-        source={require('../../assets/icon.png')}
+        source={require('../../assets/logo.png')}
         style={styles.logo}
         resizeMode="contain"
       />
@@ -245,8 +245,8 @@ const styles = StyleSheet.create({
     minHeight: '100%',
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 180,
+    height: 180,
     marginBottom: theme.spacing.xl,
   },
   formContainer: {

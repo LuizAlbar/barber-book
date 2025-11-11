@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,14 @@ interface AddCapitalModalProps {
 export default function AddCapitalModal({ visible, type, onClose, onAdd }: AddCapitalModalProps) {
   const [value, setValue] = useState('');
   const [description, setDescription] = useState('');
+  
+  // Limpar campos quando o modal abre
+  useEffect(() => {
+    if (visible) {
+      setValue('');
+      setDescription('');
+    }
+  }, [visible]);
 
   const handleAdd = () => {
     if (!value || !description) {

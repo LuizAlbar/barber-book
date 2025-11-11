@@ -1,6 +1,8 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { CreateAppointmentInput, UpdateAppointmentStatusInput, createAppointmentSchema, updateAppointmentStatusSchema } from '../schemas/appointment.schema.js';
+import { formatZodError } from '../utils/validation.js';
+import { hasAccessToBarbershop } from '../utils/barbershop.js';
 
 export async function create(
   request: FastifyRequest<{ Body: CreateAppointmentInput }>,
@@ -9,10 +11,7 @@ export async function create(
   try {
     const validation = createAppointmentSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({
-        error: 'Validation Error',
-        message: validation.error.errors
-      });
+      return reply.status(400).send(formatZodError(validation.error));
     }
     
     const { employeeId, serviceId, clientName, clientContact, datetime } = validation.data;
@@ -22,10 +21,10 @@ export async function create(
       include: { barbershop: true }
     });
 
-    if (!employee || employee.barbershop.ownerId !== request.userId) {
-      return reply.status(403).send({
-        error: 'Forbidden',
-        message: 'Not authorized to create appointments for this employee'
+    if (!employee) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Funcionário não encontrado'
       });
     }
 
@@ -77,23 +76,21 @@ export async function create(
 }
 
 export async function list(
-  request: FastifyRequest<{ Querystring: { barbershopId: string; date?: string; page?: string } }>,
+  request: FastifyRequest<{ Querystring: { barbershopId: string; date?: string; page?: string; employeeId?: string } }>,
   reply: FastifyReply
 ) {
   try {
-    const { barbershopId, date, page: pageQuery } = request.query;
+    const { barbershopId, date, page: pageQuery, employeeId } = request.query;
     const page = parseInt(pageQuery || '1');
     const limit = 20;
     const skip = (page - 1) * limit;
 
-    const barbershop = await prisma.barbershop.findFirst({
-      where: {
-        id: barbershopId,
-        ownerId: request.userId
-      }
-    });
-
-    if (!barbershop) {
+    console.log('🔍 Listando appointments:', { userId: request.userId, barbershopId, date, employeeId });
+    
+    const hasAccess = await hasAccessToBarbershop(request.userId!, barbershopId);
+    console.log('🔐 Acesso à barbearia:', hasAccess);
+    
+    if (!hasAccess) {
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Not authorized to view appointments from this barbershop'
@@ -113,14 +110,23 @@ export async function list(
       };
     }
 
+    const whereClause: any = {
+      employee: {
+        barbershopId
+      },
+      ...dateFilter
+    };
+
+    // Se employeeId for especificado, filtrar por funcionário específico
+    if (employeeId) {
+      whereClause.employeeId = employeeId;
+    }
+    
+    console.log('📋 Query where clause:', whereClause);
+    
     const [appointments, total] = await Promise.all([
       prisma.appointment.findMany({
-        where: {
-          employee: {
-            barbershopId
-          },
-          ...dateFilter
-        },
+        where: whereClause,
         skip,
         take: limit,
         orderBy: { datetime: 'asc' },
@@ -139,14 +145,11 @@ export async function list(
         }
       }),
       prisma.appointment.count({
-        where: {
-          employee: {
-            barbershopId
-          },
-          ...dateFilter
-        }
+        where: whereClause
       })
     ]);
+    
+    console.log('📊 Appointments encontrados:', { total, count: appointments.length, appointments });
 
     return reply.send({
       appointments,
@@ -173,10 +176,7 @@ export async function updateStatus(
   try {
     const validation = updateAppointmentStatusSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({
-        error: 'Validation Error',
-        message: validation.error.errors
-      });
+      return reply.status(400).send(formatZodError(validation.error));
     }
     
     const { status } = validation.data;
@@ -193,10 +193,18 @@ export async function updateStatus(
       }
     });
 
-    if (!appointment || appointment.employee.barbershop.ownerId !== request.userId) {
+    if (!appointment) {
       return reply.status(404).send({
         error: 'Not Found',
         message: 'Appointment not found'
+      });
+    }
+
+    const hasAccess = await hasAccessToBarbershop(request.userId!, appointment.employee.barbershopId);
+    if (!hasAccess) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Not authorized'
       });
     }
 

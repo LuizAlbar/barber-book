@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { CreateServiceInput, UpdateServiceInput, createServiceSchema, updateServiceSchema } from '../schemas/service.schema.js';
+import { formatZodError } from '../utils/validation.js';
 
 export async function create(
   request: FastifyRequest<{ Body: CreateServiceInput }>,
@@ -9,10 +10,7 @@ export async function create(
   try {
     const validation = createServiceSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({
-        error: 'Validation Error',
-        message: validation.error.errors
-      });
+      return reply.status(400).send(formatZodError(validation.error));
     }
     
     const barbershop = await prisma.barbershop.findFirst({
@@ -102,10 +100,7 @@ export async function update(
   try {
     const validation = updateServiceSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({
-        error: 'Validation Error',
-        message: validation.error.errors
-      });
+      return reply.status(400).send(formatZodError(validation.error));
     }
     
     const service = await prisma.service.findFirst({

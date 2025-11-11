@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { create, list } from '../controllers/capital.controller.js';
+import { create, list, remove } from '../controllers/capital.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 export async function capitalRoutes(app: FastifyInstance) {
@@ -7,4 +7,5 @@ export async function capitalRoutes(app: FastifyInstance) {
 
   app.post('/', create);
   app.get('/', list);
+  app.delete('/:id', remove);
 }

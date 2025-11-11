@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma.js';
 import { generateToken } from '../lib/jwt.js';
 import { SignupInput, LoginInput, signupSchema, loginSchema } from '../schemas/user.schema.js';
+import { formatZodError } from '../utils/validation.js';
 
 export async function signup(
   request: FastifyRequest<{ Body: SignupInput }>,
@@ -11,10 +12,7 @@ export async function signup(
   try {
     const validation = signupSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({
-        error: 'Validation Error',
-        message: validation.error.errors
-      });
+      return reply.status(400).send(formatZodError(validation.error));
     }
     
     const { name, email, password } = validation.data;
@@ -47,11 +45,19 @@ export async function signup(
           select: {
             id: true
           }
+        },
+        employees: {
+          select: {
+            id: true,
+            barbershopId: true
+          }
         }
       }
     });
 
     const token = generateToken({ userId: user.id, email: user.email });
+
+    const hasBarbershop = user.barbershops.length > 0 || user.employees.length > 0;
 
     return reply.status(201).send({
       user: {
@@ -59,7 +65,7 @@ export async function signup(
         name: user.name,
         email: user.email,
         createdAt: user.createdAt,
-        hasBarbershop: user.barbershops.length > 0
+        hasBarbershop
       },
       token
     });
@@ -79,10 +85,7 @@ export async function login(
   try {
     const validation = loginSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({
-        error: 'Validation Error',
-        message: validation.error.errors
-      });
+      return reply.status(400).send(formatZodError(validation.error));
     }
     
     const { email, password } = validation.data;
@@ -93,6 +96,12 @@ export async function login(
         barbershops: {
           select: {
             id: true
+          }
+        },
+        employees: {
+          select: {
+            id: true,
+            barbershopId: true
           }
         }
       }
@@ -116,13 +125,15 @@ export async function login(
 
     const token = generateToken({ userId: user.id, email: user.email });
 
+    const hasBarbershop = user.barbershops.length > 0 || user.employees.length > 0;
+
     return reply.send({
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         createdAt: user.createdAt,
-        hasBarbershop: user.barbershops.length > 0
+        hasBarbershop
       },
       token
     });
@@ -154,6 +165,12 @@ export async function getProfile(
             name: true,
             fullAddress: true,
             neighborhood: true
+          }
+        },
+        employees: {
+          select: {
+            id: true,
+            barbershopId: true
           }
         }
       }

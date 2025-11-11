@@ -1,6 +1,8 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { CreateCapitalInput, createCapitalSchema } from '../schemas/capital.schema.js';
+import { formatZodError } from '../utils/validation.js';
+import { hasAccessToBarbershop } from '../utils/barbershop.js';
 
 export async function create(
   request: FastifyRequest<{ Body: CreateCapitalInput }>,
@@ -9,20 +11,11 @@ export async function create(
   try {
     const validation = createCapitalSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({
-        error: 'Validation Error',
-        message: validation.error.errors
-      });
+      return reply.status(400).send(formatZodError(validation.error));
     }
     
-    const barbershop = await prisma.barbershop.findFirst({
-      where: {
-        id: validation.data.barbershopId,
-        ownerId: request.userId
-      }
-    });
-
-    if (!barbershop) {
+    const hasAccess = await hasAccessToBarbershop(request.userId!, validation.data.barbershopId);
+    if (!hasAccess) {
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Not authorized'
@@ -53,14 +46,8 @@ export async function list(
     const limit = 20;
     const skip = (page - 1) * limit;
 
-    const barbershop = await prisma.barbershop.findFirst({
-      where: {
-        id: barbershopId,
-        ownerId: request.userId
-      }
-    });
-
-    if (!barbershop) {
+    const hasAccess = await hasAccessToBarbershop(request.userId!, barbershopId);
+    if (!hasAccess) {
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Not authorized'
@@ -96,6 +83,45 @@ export async function list(
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: 'Failed to list capital'
+    });
+  }
+}
+
+export async function remove(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) {
+  try {
+    const capital = await prisma.capital.findFirst({
+      where: { id: request.params.id },
+      include: { barbershop: true }
+    });
+
+    if (!capital) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Capital entry not found'
+      });
+    }
+
+    const hasAccess = await hasAccessToBarbershop(request.userId!, capital.barbershopId);
+    if (!hasAccess) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Not authorized'
+      });
+    }
+
+    await prisma.capital.delete({
+      where: { id: request.params.id }
+    });
+
+    return reply.status(204).send();
+  } catch (error) {
+    console.error('Delete capital error:', error);
+    return reply.status(500).send({
+      error: 'Internal Server Error',
+      message: 'Failed to delete capital entry'
     });
   }
 }
