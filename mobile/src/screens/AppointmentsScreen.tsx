@@ -75,9 +75,9 @@ export default function AppointmentsScreen({ navigation }: any) {
         return;
       }
       
-      // Se for modo 'my', sempre filtrar por employeeId (se existir)
+      // Se for modo 'my' e não tiver employeeId, usar um ID inexistente para retornar vazio
       // Se for modo 'all', não filtrar (mostrar todos da barbearia)
-      const filterEmployeeId = viewMode === 'my' ? employeeId : undefined;
+      const filterEmployeeId = viewMode === 'my' ? (employeeId || 'no-employee') : undefined;
       
       console.log('📅 Buscando agendamentos para:', { barbershopId, employeeId: filterEmployeeId, viewMode, userIsOwner, hasEmployeeId: !!employeeId });
       const response = await appointmentService.list({ barbershopId, employeeId: filterEmployeeId });
@@ -105,6 +105,9 @@ export default function AppointmentsScreen({ navigation }: any) {
     <View style={styles.appointmentCard}>
       <View style={styles.appointmentHeader}>
         <Text style={styles.clientName}>{item.clientName} — {item.clientContact}</Text>
+        {viewMode === 'all' && (
+          <Text style={styles.barberName}>Barbeiro: {item.employee.user.name}</Text>
+        )}
       </View>
       <Text style={styles.serviceName}>{item.service.name}</Text>
       <Text style={styles.appointmentTime}>
@@ -323,6 +326,12 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     fontWeight: 'bold',
     color: theme.colors.text,
+  },
+  barberName: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    marginTop: theme.spacing.xs,
+    fontStyle: 'italic',
   },
   serviceName: {
     fontSize: theme.fontSize.sm,

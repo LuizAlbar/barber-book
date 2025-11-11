@@ -93,6 +93,8 @@ export default function EditBarbershopScreen({ navigation }: any) {
             placeholderTextColor="#999"
             value={name}
             onChangeText={setName}
+            multiline={name.length > 30}
+            textAlignVertical={name.length > 30 ? "top" : "center"}
           />
         </View>
 
@@ -104,7 +106,8 @@ export default function EditBarbershopScreen({ navigation }: any) {
             placeholderTextColor="#999"
             value={fullAddress}
             onChangeText={setFullAddress}
-            multiline
+            multiline={fullAddress.length > 40}
+            textAlignVertical={fullAddress.length > 40 ? "top" : "center"}
           />
         </View>
 
@@ -116,6 +119,8 @@ export default function EditBarbershopScreen({ navigation }: any) {
             placeholderTextColor="#999"
             value={neighborhood}
             onChangeText={setNeighborhood}
+            multiline={neighborhood.length > 25}
+            textAlignVertical={neighborhood.length > 25 ? "top" : "center"}
           />
         </View>
 
@@ -127,6 +132,8 @@ export default function EditBarbershopScreen({ navigation }: any) {
             placeholderTextColor="#999"
             value={referencePoint}
             onChangeText={setReferencePoint}
+            multiline={referencePoint.length > 35}
+            textAlignVertical={referencePoint.length > 35 ? "top" : "center"}
           />
         </View>
 
@@ -175,6 +182,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
+    minHeight: 48,
   },
   input: {
     flex: 1,

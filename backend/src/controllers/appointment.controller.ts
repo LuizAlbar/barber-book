@@ -120,6 +120,10 @@ export async function list(
     // Se employeeId for especificado, filtrar por funcionário específico
     if (employeeId) {
       whereClause.employeeId = employeeId;
+      // Se o employeeId for 'no-employee', garantir que não retorne nada
+      if (employeeId === 'no-employee') {
+        whereClause.employeeId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'; // UUID inexistente
+      }
     }
     
     console.log('📋 Query where clause:', whereClause);
