@@ -156,6 +156,51 @@ export async function update(
   }
 }
 
+export async function getPublicById(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) {
+  try {
+    const barbershop = await prisma.barbershop.findFirst({
+      where: { id: request.params.id },
+      include: {
+        services: true,
+        employees: {
+          where: { role: 'BARBEIRO' },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        barberSchedules: {
+          include: {
+            breakingTimes: true
+          }
+        }
+      }
+    });
+
+    if (!barbershop) {
+      return reply.status(404).send({
+        error: 'Not Found',
+        message: 'Barbearia não encontrada'
+      });
+    }
+
+    return reply.send({ barbershop });
+  } catch (error) {
+    console.error('Get public barbershop error:', error);
+    return reply.status(500).send({
+      error: 'Internal Server Error',
+      message: 'Failed to get barbershop'
+    });
+  }
+}
+
 export async function remove(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply

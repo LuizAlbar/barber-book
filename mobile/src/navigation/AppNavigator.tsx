@@ -167,6 +167,11 @@ export default function AppNavigator() {
               component={EditProfileScreen}
               options={{ headerShown: false }}
             />
+            <Stack.Screen 
+              name="CreateSchedule" 
+              component={CreateScheduleScreen}
+              options={{ headerShown: false }}
+            />
           </>
         )}
       </Stack.Navigator>

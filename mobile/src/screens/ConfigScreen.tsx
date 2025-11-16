@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, Clipboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/authSlice';
 import { setAuthToken } from '../services/api';
 import { theme } from '../styles/theme';
+import { RootState } from '../store';
 
 export default function ConfigScreen({ navigation }: any) {
   const dispatch = useDispatch();
+  const { user, token } = useSelector((state: RootState) => state.auth);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState('');
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -18,6 +22,50 @@ export default function ConfigScreen({ navigation }: any) {
     setAuthToken(null);
     dispatch(logout());
     setShowLogoutModal(false);
+  };
+
+  const generateBookingLink = async () => {
+    if (!user || !token) {
+      Alert.alert('Erro', 'Usuário não autenticado');
+      return;
+    }
+
+    try {
+      // Buscar dados da barbearia do usuário
+      const response = await fetch('http://localhost:4000/api/barbershops', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar dados da barbearia');
+      }
+
+      const data = await response.json();
+      
+      if (!data.barbershops || data.barbershops.length === 0) {
+        throw new Error('Nenhuma barbearia encontrada');
+      }
+      
+      const barbershopId = data.barbershops[0].id;
+      
+      // Gerar link com JWT embutido
+      const bookingUrl = `http://localhost:3001/booking/${barbershopId}?token=${encodeURIComponent(token)}`;
+      
+      setGeneratedLink(bookingUrl);
+      setShowLinkModal(true);
+    } catch (error) {
+      console.error('Erro ao gerar link:', error);
+      Alert.alert('Erro', 'Não foi possível gerar o link de agendamento');
+    }
+  };
+
+  const copyLinkToClipboard = () => {
+    Clipboard.setString(generatedLink);
+    Alert.alert('Sucesso', 'Link copiado para a área de transferência!');
+    setShowLinkModal(false);
   };
 
   return (
@@ -56,6 +104,17 @@ export default function ConfigScreen({ navigation }: any) {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Gerenciar</Text>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={generateBookingLink}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="link-outline" size={24} color={theme.colors.primary} />
+              <Text style={styles.menuItemText}>Gerar Link de Agendamento</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#999" />
+          </TouchableOpacity>
           <TouchableOpacity 
             style={styles.menuItem}
             onPress={() => navigation.navigate('ManageServices')}
@@ -163,6 +222,39 @@ export default function ConfigScreen({ navigation }: any) {
         </View>
       </Modal>
 
+      <Modal
+        visible={showLinkModal}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Link de Agendamento</Text>
+            <Text style={styles.modalText}>
+              Compartilhe este link com seus clientes para que eles possam agendar horários:
+            </Text>
+            <View style={styles.linkContainer}>
+              <Text style={styles.linkText} numberOfLines={3}>
+                {generatedLink}
+              </Text>
+            </View>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowLinkModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Fechar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.copyButton}
+                onPress={copyLinkToClipboard}
+              >
+                <Text style={styles.copyButtonText}>Copiar Link</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
     </View>
   );
@@ -248,7 +340,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     margin: theme.spacing.lg,
-    minWidth: 280,
+    maxWidth: '90%',
+    maxHeight: '80%',
   },
   modalTitle: {
     fontSize: theme.fontSize.lg,
@@ -288,5 +381,30 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  linkContainer: {
+    backgroundColor: '#333',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.lg,
+    maxHeight: 100,
+  },
+  linkText: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+  copyButton: {
+    flex: 1,
+    padding: theme.spacing.md,
+    marginLeft: theme.spacing.sm,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  copyButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: theme.fontSize.md,
   },
 });

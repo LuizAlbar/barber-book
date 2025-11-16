@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { CreateScheduleInput, createScheduleSchema } from '../schemas/schedule.schema.js';
 import { formatZodError } from '../utils/validation.js';
+import { hasAccessToBarbershop } from '../utils/barbershop.js';
 
 export async function create(
   request: FastifyRequest<{ Body: CreateScheduleInput }>,
@@ -15,14 +16,8 @@ export async function create(
     
     const { breakingTimes, ...scheduleData } = validation.data;
 
-    const barbershop = await prisma.barbershop.findFirst({
-      where: {
-        id: scheduleData.barbershopId,
-        ownerId: request.userId
-      }
-    });
-
-    if (!barbershop) {
+    const hasAccess = await hasAccessToBarbershop(request.userId!, scheduleData.barbershopId);
+    if (!hasAccess) {
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Not authorized'
@@ -58,14 +53,8 @@ export async function list(
   try {
     const { barbershopId } = request.query;
 
-    const barbershop = await prisma.barbershop.findFirst({
-      where: {
-        id: barbershopId,
-        ownerId: request.userId
-      }
-    });
-
-    if (!barbershop) {
+    const hasAccess = await hasAccessToBarbershop(request.userId!, barbershopId);
+    if (!hasAccess) {
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Not authorized'
