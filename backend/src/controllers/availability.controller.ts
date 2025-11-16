@@ -59,17 +59,28 @@ export async function getAvailableSlots(
       });
     }
 
-    const targetDate = new Date(date);
+    // Criar data no timezone local para evitar problemas de UTC
+    const [year, month, day] = date.split('-').map(Number);
+    const targetDate = new Date(year, month - 1, day);
     const dayOfWeek = targetDate.getDay();
     const daysOfWeek = JSON.parse(schedule.daysOfWeek);
+    
+    console.log('📅 Data alvo:', date);
+    console.log('📅 targetDate:', targetDate);
+    console.log('📅 Dia da semana (0=Dom, 6=Sáb):', dayOfWeek);
+    console.log('📅 Dias configurados:', daysOfWeek);
+    console.log('📅 Tipo dos dias configurados:', typeof daysOfWeek, Array.isArray(daysOfWeek));
+    console.log('📅 Dia está nos dias configurados?', daysOfWeek.includes(dayOfWeek));
+    console.log('📅 Horários da barbearia:', { openTime: schedule.openTime, closeTime: schedule.closeTime });
 
     if (!daysOfWeek.includes(dayOfWeek)) {
+      console.log('❌ Dia não está configurado para funcionamento');
       return reply.send({ availableSlots: [] });
     }
 
     // Buscar agendamentos existentes para o dia
-    const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+    const startOfDay = new Date(date + 'T00:00:00.000Z');
+    const endOfDay = new Date(date + 'T23:59:59.999Z');
 
     const existingAppointments = await prisma.appointment.findMany({
       where: {
@@ -81,6 +92,16 @@ export async function getAvailableSlots(
         status: { not: 'CANCELLED' }
       },
       include: { service: true }
+    });
+    
+    console.log('📅 Período de busca:', { startOfDay, endOfDay });
+    console.log('📋 Agendamentos existentes:', existingAppointments.length);
+    existingAppointments.forEach(apt => {
+      console.log('  - Agendamento:', {
+        datetime: apt.datetime,
+        service: apt.service.name,
+        duration: apt.service.timeTaken
+      });
     });
 
     // Gerar slots disponíveis

@@ -38,7 +38,9 @@ export function Calendar({ selectedDate, onDateSelect }: CalendarProps) {
   };
 
   const formatDate = (date: Date) => {
-    return date.toISOString().split('T')[0];
+    const formatted = date.toISOString().split('T')[0];
+    console.log('📅 Formatando data:', { date, formatted, dayOfWeek: date.getDay() });
+    return formatted;
   };
 
   const isToday = (date: Date) => {
