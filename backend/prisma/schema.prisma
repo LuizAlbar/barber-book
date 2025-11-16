@@ -133,8 +133,8 @@ model Capital {
 model BarberSchedule {
   id           String         @id @default(uuid())
   daysOfWeek   String         @map("days_of_week")
-  openTime     String         @map("open_time")
-  closeTime    String         @map("close_time")
+  openTime     Int            @map("open_time")
+  closeTime    Int            @map("close_time")
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   
@@ -148,8 +148,8 @@ model BarberSchedule {
 
 model BreakingTime {
   id              String         @id @default(uuid())
-  startingTime    String         @map("starting_time")
-  endingTime      String         @map("ending_time")
+  startingTime    Int            @map("starting_time")
+  endingTime      Int            @map("ending_time")
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   

@@ -24,6 +24,11 @@ export async function create(
       });
     }
 
+    // Deletar schedule existente se houver
+    await prisma.barberSchedule.deleteMany({
+      where: { barbershopId: scheduleData.barbershopId }
+    });
+
     const schedule = await prisma.barberSchedule.create({
       data: {
         ...scheduleData,

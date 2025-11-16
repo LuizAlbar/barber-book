@@ -8,6 +8,7 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/booking/:barbershopId" element={<BookingPage />} />
+          <Route path="/:barbershopId" element={<BookingPage />} />
           <Route path="/" element={
             <div className="home">
               <h1>BarberBook</h1>

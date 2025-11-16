@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { availabilityService, appointmentService } from '../services/api';
+import { Calendar } from './Calendar';
 
 interface Barbershop {
   id: string;
@@ -195,13 +196,10 @@ export function BookingForm({ barbershop }: BookingFormProps) {
       </div>
 
       <div className="form-group">
-        <label>Data:</label>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          min={getTomorrowDate()}
-          required
+        <label>Selecione a Data:</label>
+        <Calendar 
+          selectedDate={selectedDate}
+          onDateSelect={setSelectedDate}
         />
       </div>
 

@@ -8,16 +8,20 @@ export async function getAvailableSlots(
   }>,
   reply: FastifyReply
 ) {
+  console.log('🔍 getAvailableSlots called with:', request.params, request.query);
   try {
     const { barbershopId } = request.params;
     const { employeeId, serviceId, date } = request.query;
 
     // Buscar serviço para saber a duração
+    console.log('🔍 Buscando serviço:', { serviceId, barbershopId });
     const service = await prisma.service.findFirst({
       where: { id: serviceId, barbershopId }
     });
+    console.log('📋 Serviço encontrado:', service);
 
     if (!service) {
+      console.log('❌ Serviço não encontrado');
       return reply.status(404).send({
         error: 'Not Found',
         message: 'Serviço não encontrado'
@@ -25,11 +29,14 @@ export async function getAvailableSlots(
     }
 
     // Buscar funcionário
+    console.log('🔍 Buscando funcionário:', { employeeId, barbershopId });
     const employee = await prisma.employee.findFirst({
       where: { id: employeeId, barbershopId }
     });
+    console.log('👤 Funcionário encontrado:', employee);
 
     if (!employee) {
+      console.log('❌ Funcionário não encontrado');
       return reply.status(404).send({
         error: 'Not Found',
         message: 'Funcionário não encontrado'
@@ -37,12 +44,15 @@ export async function getAvailableSlots(
     }
 
     // Buscar horários da barbearia
+    console.log('🔍 Buscando horários da barbearia:', { barbershopId });
     const schedule = await prisma.barberSchedule.findFirst({
       where: { barbershopId },
       include: { breakingTimes: true }
     });
+    console.log('⏰ Horários encontrados:', schedule);
 
     if (!schedule) {
+      console.log('❌ Horário de funcionamento não encontrado');
       return reply.status(404).send({
         error: 'Not Found',
         message: 'Horário de funcionamento não encontrado'
@@ -83,6 +93,7 @@ export async function getAvailableSlots(
       new Date(date)
     );
 
+    console.log('✅ Retornando slots:', availableSlots);
     return reply.send({ availableSlots });
   } catch (error) {
     console.error('Get available slots error:', error);
@@ -94,59 +105,43 @@ export async function getAvailableSlots(
 }
 
 function generateAvailableSlots(
-  openTime: string,
-  closeTime: string,
+  openTime: number,
+  closeTime: number,
   breakingTimes: any[],
   existingAppointments: any[],
   serviceDuration: number,
   targetDate: Date
 ): string[] {
   const slots: string[] = [];
-  const [openHour, openMinute] = openTime.split(':').map(Number);
-  const [closeHour, closeMinute] = closeTime.split(':').map(Number);
-
-  const startTime = new Date(targetDate);
-  startTime.setHours(openHour, openMinute, 0, 0);
-
-  const endTime = new Date(targetDate);
-  endTime.setHours(closeHour, closeMinute, 0, 0);
-
-  const slotDuration = 30; // 30 minutos por slot
-  let currentTime = new Date(startTime);
-
-  while (currentTime < endTime) {
-    const slotEnd = new Date(currentTime.getTime() + serviceDuration * 60000);
+  const slotInterval = 30; // Intervalo de 30 minutos
+  
+  let currentMinutes = openTime;
+  
+  while (currentMinutes + serviceDuration <= closeTime) {
+    const slotEndMinutes = currentMinutes + serviceDuration;
     
-    if (slotEnd <= endTime) {
-      const timeString = currentTime.toTimeString().slice(0, 5);
+    // Verificar se não está em horário de pausa
+    const isInBreak = breakingTimes.some(breakTime => {
+      return (currentMinutes < breakTime.endingTime && slotEndMinutes > breakTime.startingTime);
+    });
+
+    // Verificar se não conflita com agendamentos existentes
+    const hasConflict = existingAppointments.some(appointment => {
+      const appointmentStart = new Date(appointment.datetime);
+      const appointmentMinutes = appointmentStart.getHours() * 60 + appointmentStart.getMinutes();
+      const appointmentEndMinutes = appointmentMinutes + appointment.service.timeTaken;
       
-      // Verificar se não está em horário de pausa
-      const isInBreak = breakingTimes.some(breakTime => {
-        const [breakStart] = breakTime.startingTime.split(':').map(Number);
-        const [breakEnd] = breakTime.endingTime.split(':').map(Number);
-        const currentHour = currentTime.getHours();
-        const currentMinute = currentTime.getMinutes();
-        const currentTotalMinutes = currentHour * 60 + currentMinute;
-        const breakStartMinutes = breakStart * 60;
-        const breakEndMinutes = breakEnd * 60;
-        
-        return currentTotalMinutes >= breakStartMinutes && currentTotalMinutes < breakEndMinutes;
-      });
+      return (currentMinutes < appointmentEndMinutes && slotEndMinutes > appointmentMinutes);
+    });
 
-      // Verificar se não conflita com agendamentos existentes
-      const hasConflict = existingAppointments.some(appointment => {
-        const appointmentStart = new Date(appointment.datetime);
-        const appointmentEnd = new Date(appointmentStart.getTime() + appointment.service.timeTaken * 60000);
-        
-        return (currentTime < appointmentEnd && slotEnd > appointmentStart);
-      });
-
-      if (!isInBreak && !hasConflict) {
-        slots.push(timeString);
-      }
+    if (!isInBreak && !hasConflict) {
+      const hours = Math.floor(currentMinutes / 60);
+      const minutes = currentMinutes % 60;
+      const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      slots.push(timeString);
     }
 
-    currentTime = new Date(currentTime.getTime() + slotDuration * 60000);
+    currentMinutes += slotInterval;
   }
 
   return slots;

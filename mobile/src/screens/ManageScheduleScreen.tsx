@@ -1,122 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  Switch,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { scheduleService } from '../services/api';
 import { theme } from '../styles/theme';
 
-const DAYS = [
-  { key: 'MONDAY', label: 'Segunda-feira' },
-  { key: 'TUESDAY', label: 'Terça-feira' },
-  { key: 'WEDNESDAY', label: 'Quarta-feira' },
-  { key: 'THURSDAY', label: 'Quinta-feira' },
-  { key: 'FRIDAY', label: 'Sexta-feira' },
-  { key: 'SATURDAY', label: 'Sábado' },
-  { key: 'SUNDAY', label: 'Domingo' },
-];
-
 export default function ManageScheduleScreen({ navigation }: any) {
-  const [schedule, setSchedule] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadSchedule = async () => {
-    try {
-      const response = await scheduleService.list('716f3577-4b85-4e25-977d-f0cfa2f4b356');
-      const schedules = response.schedules || [];
-      
-      const scheduleMap = DAYS.map(day => {
-        const existing = schedules.find((s: any) => s.dayOfWeek === day.key);
-        return {
-          day: day.key,
-          label: day.label,
-          isOpen: existing ? existing.isOpen : day.key !== 'SUNDAY',
-          openTime: existing ? existing.openTime : '08:00',
-          closeTime: existing ? existing.closeTime : '18:00',
-          breakStartTime: existing ? existing.breakStartTime : '12:00',
-          breakEndTime: existing ? existing.breakEndTime : '13:00',
-          id: existing ? existing.id : null,
-        };
-      });
-      
-      setSchedule(scheduleMap);
-    } catch (error) {
-      console.error('Erro ao carregar horários:', error);
-      const defaultSchedule = DAYS.map(day => ({
-        day: day.key,
-        label: day.label,
-        isOpen: day.key !== 'SUNDAY',
-        openTime: '08:00',
-        closeTime: '18:00',
-        breakStartTime: '12:00',
-        breakEndTime: '13:00',
-        id: null,
-      }));
-      setSchedule(defaultSchedule);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadSchedule();
-  }, []);
-
-  const toggleDay = (dayKey: string) => {
-    setSchedule(prev => prev.map(s => 
-      s.day === dayKey ? { ...s, isOpen: !s.isOpen } : s
-    ));
-  };
-
-  const renderScheduleItem = ({ item }: { item: any }) => (
-    <View style={styles.scheduleCard}>
-      <View style={styles.scheduleInfo}>
-        <Text style={styles.dayLabel}>{item.label}</Text>
-        {item.isOpen ? (
-          <>
-            <Text style={styles.timeText}>{item.openTime} - {item.closeTime}</Text>
-            <Text style={styles.breakText}>Intervalo: {item.breakStartTime} - {item.breakEndTime}</Text>
-          </>
-        ) : (
-          <Text style={styles.closedText}>Fechado</Text>
-        )}
-      </View>
-      <Switch
-        value={item.isOpen}
-        onValueChange={() => toggleDay(item.day)}
-        trackColor={{ false: '#666', true: theme.colors.primary }}
-        thumbColor={item.isOpen ? '#fff' : '#ccc'}
-      />
-    </View>
-  );
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Horários de Funcionamento</Text>
+        <Text style={styles.title}>Horários</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      {loading ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Carregando...</Text>
+      <ScrollView style={styles.content}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Configurar Horários</Text>
+          
+          <TouchableOpacity 
+            style={styles.optionCard}
+            onPress={() => navigation.navigate('BarbershopSchedule')}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="business-outline" size={24} color={theme.colors.primary} />
+              <View style={styles.optionInfo}>
+                <Text style={styles.optionTitle}>Horário da Barbearia</Text>
+                <Text style={styles.optionDescription}>Definir dias e horários de funcionamento</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#999" />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.optionCard}
+            onPress={() => navigation.navigate('BarberSchedule')}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="people-outline" size={24} color={theme.colors.primary} />
+              <View style={styles.optionInfo}>
+                <Text style={styles.optionTitle}>Horário dos Barbeiros</Text>
+                <Text style={styles.optionDescription}>Configurar horários individuais de cada barbeiro</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#999" />
+          </TouchableOpacity>
         </View>
-      ) : (
-        <FlatList
-          data={schedule}
-          renderItem={renderScheduleItem}
-          keyExtractor={(item) => item.day}
-          contentContainerStyle={styles.list}
-        />
-      )}
+      </ScrollView>
     </View>
   );
 }
@@ -139,10 +69,20 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontWeight: 'bold',
   },
-  list: {
+  content: {
+    flex: 1,
+  },
+  section: {
     padding: theme.spacing.lg,
   },
-  scheduleCard: {
+  sectionTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: 'bold',
+    color: '#999',
+    marginBottom: theme.spacing.md,
+    textTransform: 'uppercase',
+  },
+  optionCard: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
@@ -151,37 +91,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  scheduleInfo: {
+  optionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
-  dayLabel: {
-    color: theme.colors.text,
+  optionInfo: {
+    marginLeft: theme.spacing.md,
+    flex: 1,
+  },
+  optionTitle: {
     fontSize: theme.fontSize.md,
+    color: theme.colors.text,
     fontWeight: 'bold',
   },
-  timeText: {
-    color: '#999',
+  optionDescription: {
     fontSize: theme.fontSize.sm,
-    marginTop: theme.spacing.xs,
-  },
-  closedText: {
-    color: theme.colors.error,
-    fontSize: theme.fontSize.sm,
-    marginTop: theme.spacing.xs,
-  },
-  breakText: {
-    color: '#666',
-    fontSize: theme.fontSize.xs,
-    marginTop: 2,
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
     color: '#999',
-    fontSize: theme.fontSize.md,
-    marginTop: theme.spacing.md,
+    marginTop: theme.spacing.xs,
   },
 });

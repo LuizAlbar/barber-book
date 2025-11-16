@@ -114,31 +114,6 @@ export default function DashboardScreen({ navigation }: any) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Link de Agendamento</Text>
-          <TouchableOpacity 
-            style={[styles.linkButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => {
-              const link = `http://localhost:3000/716f3577-4b85-4e25-977d-f0cfa2f4b356`;
-              Alert.alert(
-                'Link de Agendamento',
-                `Compartilhe este link com seus clientes:\n\n${link}`,
-                [
-                  { text: 'Fechar', style: 'cancel' },
-                  { text: 'Copiar Link', onPress: () => {
-                    // TODO: Implementar cópia para clipboard
-                    Alert.alert('Copiado!', 'Link copiado para a área de transferência');
-                  }}
-                ]
-              );
-            }}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="link-outline" size={24} color="#FFF" />
-            <Text style={styles.addButtonText}>Gerar Link</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Adicionar Movimentação</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
@@ -352,14 +327,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: theme.fontSize.md,
     fontWeight: 'bold',
-  },
-  linkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    gap: theme.spacing.sm,
   },
   emptyState: {
     alignItems: 'center',
