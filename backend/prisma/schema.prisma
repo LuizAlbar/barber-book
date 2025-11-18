@@ -73,7 +73,7 @@ model Appointment {
   clientName    String            @map("client_name")
   clientContact String            @map("client_contact")
   datetime      DateTime
-  status        AppointmentStatus @default("PENDING")
+  status        AppointmentStatus @default(PENDING)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   employeeId    String            @map("employee_id")
