@@ -202,7 +202,7 @@ export default function SignupScreen({ navigation }: any) {
           {loading ? (
             <ActivityIndicator color={theme.colors.background} />
           ) : (
-            <Text style={styles.buttonText}>Cadastrar</Text>
+            <Text style={styles.buttonText}>Cadastrar-se</Text>
           )}
         </TouchableOpacity>
 

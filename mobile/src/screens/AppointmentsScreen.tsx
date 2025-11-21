@@ -127,7 +127,7 @@ export default function AppointmentsScreen({ navigation }: any) {
         )}
       >
         <Text style={styles.statusButtonText}>
-          {item.status === 'COMPLETED' ? 'Completed' : 'Mark Done'}
+          {item.status === 'COMPLETED' ? 'Concluído' : 'Concluir'}
         </Text>
       </TouchableOpacity>
     </View>
@@ -145,7 +145,7 @@ export default function AppointmentsScreen({ navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Appointments</Text>
+          <Text style={styles.headerTitle}>Agendamentos</Text>
           <Text style={styles.headerDate}>
             {new Date().toLocaleDateString('pt-BR', {
               day: '2-digit',
@@ -183,11 +183,11 @@ export default function AppointmentsScreen({ navigation }: any) {
         </View>
         <View style={[styles.summaryItem, { borderLeftColor: theme.colors.warning }]}>
           <Text style={styles.summaryValue}>{pendingAppointments.length}</Text>
-          <Text style={styles.summaryLabel}>Pending</Text>
+          <Text style={styles.summaryLabel}>Pendentes</Text>
         </View>
         <View style={[styles.summaryItem, { borderLeftColor: theme.colors.success }]}>
           <Text style={styles.summaryValue}>{completedAppointments.length}</Text>
-          <Text style={styles.summaryLabel}>Done</Text>
+          <Text style={styles.summaryLabel}>Concluídos</Text>
         </View>
       </View>
 
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.primary,
     marginTop: theme.spacing.xs,
-    fontStyle: 'italic',
+   
   },
   serviceName: {
     fontSize: theme.fontSize.sm,

@@ -77,7 +77,7 @@ export default function LoginScreen({ navigation }: any) {
       />
 
       <View style={styles.formContainer}>
-        <Text style={styles.title}>LOGIN</Text>
+        <Text style={styles.title}>ENTRAR</Text>
 
         <View style={styles.inputContainer}>
           <Ionicons name="person-outline" size={24} color={theme.colors.primary} />

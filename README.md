@@ -24,6 +24,6 @@
 
 ### 🌐 Padronização de Idioma
 
-* [ ] Revisar toda a interface do usuário (UI), mensagens do sistema e textos de ajuda para garantir que estejam **padronizados para o Português (pt-BR)**.
+* [x] Revisar toda a interface do usuário (UI), mensagens do sistema e textos de ajuda para garantir que estejam **padronizados para o Português (pt-BR)**.
 
 ---
