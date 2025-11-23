@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 export const createInvitationSchema = z.object({
   userEmail: z.string().email(),
-  phoneNumber: z.string().min(10),
   role: z.enum(['BARBEIRO', 'ATENDENTE']),
   barbershopId: z.string().uuid()
 });

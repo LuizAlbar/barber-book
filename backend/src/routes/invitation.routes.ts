@@ -11,3 +11,4 @@ export async function invitationRoutes(app: FastifyInstance) {
   app.post('/:id/reject', reject);
 }
 
+

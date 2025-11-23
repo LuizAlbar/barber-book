@@ -14,7 +14,7 @@ export async function create(
       return reply.status(400).send(formatZodError(validation.error));
     }
     
-    const { userEmail, phoneNumber, role, barbershopId } = validation.data;
+    const { userEmail, role, barbershopId } = validation.data;
 
     // Verificar se o usuário é dono da barbearia
     const barbershop = await prisma.barbershop.findFirst({
@@ -68,7 +68,6 @@ export async function create(
     const invitation = await prisma.invitation.create({
       data: {
         userEmail,
-        phoneNumber,
         role,
         barbershopId
       },
@@ -194,7 +193,7 @@ export async function accept(
     // Verificar se o email do convite corresponde ao email do usuário
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true }
+      select: { email: true, phone: true }
     });
 
     if (!user) {
@@ -233,7 +232,8 @@ export async function accept(
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            phone: true
           }
         },
         barbershop: {
@@ -284,7 +284,6 @@ export async function accept(
 
     // Criar employee e atualizar convite
     console.log('Creating employee with data:', {
-      phoneNumber: invitation.phoneNumber,
       role: invitation.role,
       userId,
       barbershopId: invitation.barbershopId
@@ -292,7 +291,6 @@ export async function accept(
 
     const employee = await prisma.employee.create({
       data: {
-        phoneNumber: invitation.phoneNumber,
         role: invitation.role,
         userId,
         barbershopId: invitation.barbershopId
@@ -302,7 +300,8 @@ export async function accept(
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            phone: true
           }
         },
         barbershop: {

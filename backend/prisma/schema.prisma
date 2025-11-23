@@ -43,7 +43,6 @@ model Barbershop {
 
 model Employee {
   id           String        @id @default(uuid())
-  phoneNumber  String        @map("phone_number")
   role         EmployeeRole
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -148,7 +147,6 @@ enum CapitalType {
 model Invitation {
   id           String        @id @default(uuid())
   userEmail    String        @map("user_email")
-  phoneNumber  String        @map("phone_number")
   role         EmployeeRole
   status       InvitationStatus @default(PENDING)
   createdAt    DateTime      @default(now())

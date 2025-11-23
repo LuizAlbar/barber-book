@@ -56,3 +56,4 @@ O servidor estará rodando em `http://localhost:4000`
 - `pnpm prisma:migrate` - Executa as migrações
 - `pnpm prisma:studio` - Abre o Prisma Studio
 
+

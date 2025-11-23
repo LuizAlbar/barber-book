@@ -42,7 +42,6 @@ export async function create(
 
     const employee = await prisma.employee.create({
       data: {
-        phoneNumber: validation.data.phoneNumber,
         role: validation.data.role,
         userId: user.id,
         barbershopId: validation.data.barbershopId
@@ -52,7 +51,8 @@ export async function create(
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            phone: true
           }
         }
       }
@@ -96,7 +96,8 @@ export async function list(
             select: {
               id: true,
               name: true,
-              email: true
+              email: true,
+              phone: true
             }
           }
         }
