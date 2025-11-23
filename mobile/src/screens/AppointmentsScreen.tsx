@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { appointmentService, authService } from '../services/api';
 import { theme } from '../styles/theme';
+import AppointmentsCalendar from '../components/AppointmentsCalendar';
 
 interface Appointment {
   id: string;
@@ -25,10 +26,12 @@ interface Appointment {
 
 export default function AppointmentsScreen({ navigation }: any) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'my' | 'all'>('my');
   const [isOwner, setIsOwner] = useState(false);
   const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
 
   const today = new Date().toISOString().split('T')[0];
@@ -80,6 +83,12 @@ export default function AppointmentsScreen({ navigation }: any) {
       const filterEmployeeId = viewMode === 'my' ? (employeeId || 'no-employee') : undefined;
       
       console.log('📅 Buscando agendamentos para:', { barbershopId, employeeId: filterEmployeeId, viewMode, userIsOwner, hasEmployeeId: !!employeeId });
+      
+      // Buscar todos os agendamentos para o calendário (sem filtro de funcionário)
+      const allResponse = await appointmentService.list({ barbershopId });
+      setAllAppointments(allResponse.appointments || []);
+      
+      // Buscar agendamentos filtrados para a lista
       const response = await appointmentService.list({ barbershopId, employeeId: filterEmployeeId });
       console.log('📋 Agendamentos recebidos:', response);
       setAppointments(response.appointments);
@@ -154,7 +163,7 @@ export default function AppointmentsScreen({ navigation }: any) {
             })}
           </Text>
         </View>
-        <TouchableOpacity onPress={loadAppointments}>
+        <TouchableOpacity onPress={() => setShowCalendar(true)}>
           <Ionicons name="calendar-outline" size={32} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
@@ -227,6 +236,13 @@ export default function AppointmentsScreen({ navigation }: any) {
           <Text style={styles.navLabel}>Config</Text>
         </TouchableOpacity>
       </View>
+
+      <AppointmentsCalendar
+        visible={showCalendar}
+        onClose={() => setShowCalendar(false)}
+        appointments={allAppointments}
+        viewMode={viewMode}
+      />
     </View>
   );
 }

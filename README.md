@@ -9,7 +9,7 @@
 
 ### 📅 Funcionalidades de Agendamento e Calendário
 
-* [ ] Desenvolver e integrar um **Calendário** totalmente **funcional** para visualizar todos os agendamentos existentes (visão de agendamentos 'n').
+* [x] Desenvolver e integrar um **Calendário** totalmente **funcional** para visualizar todos os agendamentos existentes (visão de agendamentos 'n').
 * [x] Criar uma funcionalidade de **Agendamento Manual** para que os administradores ou funcionários possam adicionar compromissos diretamente pelo sistema, fora do fluxo padrão do site do cliente.
 
 ### 📊 Dashboard e Relatórios
