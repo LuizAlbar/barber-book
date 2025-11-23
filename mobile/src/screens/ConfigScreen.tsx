@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, Clipboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
@@ -6,6 +6,7 @@ import { logout } from '../store/authSlice';
 import { setAuthToken } from '../services/api';
 import { theme } from '../styles/theme';
 import { RootState } from '../store';
+import { isBarbershopOwner } from '../utils/barbershop';
 
 export default function ConfigScreen({ navigation }: any) {
   const dispatch = useDispatch();
@@ -13,6 +14,23 @@ export default function ConfigScreen({ navigation }: any) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
+  const [isOwner, setIsOwner] = useState(false);
+  const [loadingOwnerCheck, setLoadingOwnerCheck] = useState(true);
+
+  useEffect(() => {
+    checkOwnerStatus();
+  }, []);
+
+  const checkOwnerStatus = async () => {
+    try {
+      const owner = await isBarbershopOwner();
+      setIsOwner(owner);
+    } catch (error) {
+      console.error('Erro ao verificar status de dono:', error);
+    } finally {
+      setLoadingOwnerCheck(false);
+    }
+  };
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -87,67 +105,77 @@ export default function ConfigScreen({ navigation }: any) {
       </View>
       
       <ScrollView style={styles.content}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dados da Barbearia</Text>
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('EditBarbershop')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <Ionicons name="business-outline" size={24} color={theme.colors.primary} />
-              <Text style={styles.menuItemText}>Editar Barbearia</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="#999" />
-          </TouchableOpacity>
-        </View>
+        {isOwner && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Dados da Barbearia</Text>
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('EditBarbershop')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="business-outline" size={24} color={theme.colors.primary} />
+                <Text style={styles.menuItemText}>Editar Barbearia</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#999" />
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Gerenciar</Text>
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={generateBookingLink}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <Ionicons name="link-outline" size={24} color={theme.colors.primary} />
-              <Text style={styles.menuItemText}>Gerar Link de Agendamento</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="#999" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('ManageServices')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <Ionicons name="cut-outline" size={24} color={theme.colors.primary} />
-              <Text style={styles.menuItemText}>Serviços</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="#999" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('ManageEmployees')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <Ionicons name="people-outline" size={24} color={theme.colors.primary} />
-              <Text style={styles.menuItemText}>Funcionários</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="#999" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('ManageSchedule')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <Ionicons name="time-outline" size={24} color={theme.colors.primary} />
-              <Text style={styles.menuItemText}>Horários de Funcionamento</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="#999" />
-          </TouchableOpacity>
+          {isOwner && (
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={generateBookingLink}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="link-outline" size={24} color={theme.colors.primary} />
+                <Text style={styles.menuItemText}>Gerar Link de Agendamento</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#999" />
+            </TouchableOpacity>
+          )}
+          {isOwner && (
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('ManageServices')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="cut-outline" size={24} color={theme.colors.primary} />
+                <Text style={styles.menuItemText}>Serviços</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#999" />
+            </TouchableOpacity>
+          )}
+          {isOwner && (
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('ManageEmployees')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="people-outline" size={24} color={theme.colors.primary} />
+                <Text style={styles.menuItemText}>Funcionários</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#999" />
+            </TouchableOpacity>
+          )}
+          {isOwner && (
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('ManageSchedule')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="time-outline" size={24} color={theme.colors.primary} />
+                <Text style={styles.menuItemText}>Horários de Funcionamento</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#999" />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity 
             style={styles.menuItem}
             onPress={() => navigation.navigate('CreateManualAppointment')}

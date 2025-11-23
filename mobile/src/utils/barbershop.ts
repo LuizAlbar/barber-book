@@ -2,6 +2,19 @@ import { authService } from '../services/api';
 import { Alert } from 'react-native';
 
 /**
+ * Verifica se o usuário é dono de uma barbearia
+ */
+export async function isBarbershopOwner(): Promise<boolean> {
+  try {
+    const profileResponse = await authService.getProfile();
+    return !!(profileResponse.user.barbershops && profileResponse.user.barbershops.length > 0);
+  } catch (error) {
+    console.error('Erro ao verificar se é dono:', error);
+    return false;
+  }
+}
+
+/**
  * Busca o barbershopId do usuário logado
  * Retorna o ID da barbearia se o usuário for dono ou funcionário
  */

@@ -1,9 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
+import { isBarbershopOwner } from '../utils/barbershop';
 
 export default function ManageScheduleScreen({ navigation }: any) {
+  useEffect(() => {
+    checkPermissions();
+  }, []);
+
+  const checkPermissions = async () => {
+    try {
+      const owner = await isBarbershopOwner();
+      if (!owner) {
+        Alert.alert('Acesso Negado', 'Apenas o dono da barbearia pode gerenciar horários de funcionamento.', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar permissões:', error);
+      Alert.alert('Erro', 'Não foi possível verificar as permissões');
+      navigation.goBack();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>

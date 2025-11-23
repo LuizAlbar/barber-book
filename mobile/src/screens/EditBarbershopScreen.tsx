@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { barbershopService } from '../services/api';
 import { theme } from '../styles/theme';
-import { getBarbershopIdOrError } from '../utils/barbershop';
+import { getBarbershopIdOrError, isBarbershopOwner } from '../utils/barbershop';
 
 export default function EditBarbershopScreen({ navigation }: any) {
   const [name, setName] = useState('');
@@ -24,8 +24,25 @@ export default function EditBarbershopScreen({ navigation }: any) {
   const [barbershopId, setBarbershopId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadBarbershopData();
+    checkPermissions();
   }, []);
+
+  const checkPermissions = async () => {
+    try {
+      const owner = await isBarbershopOwner();
+      if (!owner) {
+        Alert.alert('Acesso Negado', 'Apenas o dono da barbearia pode editar os dados da barbearia.', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+        return;
+      }
+      loadBarbershopData();
+    } catch (error) {
+      console.error('Erro ao verificar permissões:', error);
+      Alert.alert('Erro', 'Não foi possível verificar as permissões');
+      navigation.goBack();
+    }
+  };
 
   const loadBarbershopData = async () => {
     try {

@@ -6,11 +6,12 @@ import {
   StyleSheet,
   FlatList,
   Modal,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { employeeService } from '../services/api';
 import { theme } from '../styles/theme';
-import { getBarbershopIdOrError } from '../utils/barbershop';
+import { getBarbershopIdOrError, isBarbershopOwner } from '../utils/barbershop';
 
 export default function ManageEmployeesScreen({ navigation }: any) {
   const [employees, setEmployees] = useState<any[]>([]);
@@ -18,6 +19,27 @@ export default function ManageEmployeesScreen({ navigation }: any) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<{id: string, name: string} | null>(null);
   const [barbershopId, setBarbershopId] = useState<string | null>(null);
+
+  useEffect(() => {
+    checkPermissions();
+  }, []);
+
+  const checkPermissions = async () => {
+    try {
+      const owner = await isBarbershopOwner();
+      if (!owner) {
+        Alert.alert('Acesso Negado', 'Apenas o dono da barbearia pode gerenciar funcionários.', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+        return;
+      }
+      loadEmployees();
+    } catch (error) {
+      console.error('Erro ao verificar permissões:', error);
+      Alert.alert('Erro', 'Não foi possível verificar as permissões');
+      navigation.goBack();
+    }
+  };
 
   const loadEmployees = async () => {
     try {
@@ -33,10 +55,6 @@ export default function ManageEmployeesScreen({ navigation }: any) {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadEmployees();
-  }, []);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
