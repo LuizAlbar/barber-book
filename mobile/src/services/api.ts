@@ -244,3 +244,22 @@ export const scheduleService = {
     return response.data;
   },
 };
+
+export const invitationService = {
+  create: async (data: any) => {
+    const response = await api.post('/invitations', data);
+    return response.data;
+  },
+  list: async () => {
+    const response = await api.get('/invitations');
+    return response.data;
+  },
+  accept: async (id: string) => {
+    const response = await api.post(`/invitations/${id}/accept`, {});
+    return response.data;
+  },
+  reject: async (id: string) => {
+    const response = await api.post(`/invitations/${id}/reject`);
+    return response.data;
+  },
+};

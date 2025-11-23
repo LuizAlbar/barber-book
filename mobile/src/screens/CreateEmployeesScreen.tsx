@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
-import { employeeService } from '../services/api';
+import { invitationService } from '../services/api';
 import { RootState } from '../store';
 import { theme } from '../styles/theme';
 
@@ -68,25 +68,59 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
 
     setLoading(true);
     try {
+      let successCount = 0;
+      const errors: string[] = [];
+
       for (const employee of employees) {
-        await employeeService.create({
-          phoneNumber: employee.phone_number,
-          role: employee.role,
-          userEmail: employee.user_email,
-          barbershopId
-        });
+        try {
+          await invitationService.create({
+            phoneNumber: employee.phone_number,
+            role: employee.role,
+            userEmail: employee.user_email,
+            barbershopId
+          });
+          successCount++;
+        } catch (error: any) {
+          console.error('Erro ao enviar convite:', error);
+          const errorMessage = error.response?.data?.message || 'Erro desconhecido';
+          errors.push(`${employee.user_email}: ${errorMessage}`);
+        }
+      }
+      
+      let message = '';
+      if (successCount > 0) {
+        message = `${successCount} convite(s) enviado(s) com sucesso!`;
+        if (errors.length > 0) {
+          message += `\n\nErros:\n${errors.join('\n')}`;
+        }
+      } else {
+        message = `Não foi possível enviar os convites:\n${errors.join('\n')}`;
       }
       
       if (isFromManage) {
-        Alert.alert('Sucesso', 'Funcionários criados com sucesso!', [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
+        Alert.alert(
+          successCount > 0 ? 'Sucesso' : 'Erro',
+          message,
+          [{ text: 'OK', onPress: () => {
+            if (successCount > 0) {
+              navigation.goBack();
+            }
+          }}]
+        );
       } else {
-        navigation.navigate('CreateSchedule', { barbershopId });
+        Alert.alert(
+          successCount > 0 ? 'Sucesso' : 'Erro',
+          message,
+          [{ text: 'OK', onPress: () => {
+            if (successCount > 0) {
+              navigation.navigate('CreateSchedule', { barbershopId });
+            }
+          }}]
+        );
       }
     } catch (error: any) {
-      console.error('Erro ao criar funcionários:', error);
-      Alert.alert('Erro', 'Não foi possível criar os funcionários');
+      console.error('Erro ao enviar convites:', error);
+      Alert.alert('Erro', 'Não foi possível enviar os convites');
     } finally {
       setLoading(false);
     }
@@ -124,8 +158,8 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
       
       <View style={styles.header}>
         <Ionicons name="people-outline" size={48} color={theme.colors.primary} />
-        <Text style={styles.title}>Adicionar Funcionários</Text>
-        <Text style={styles.subtitle}>{isFromManage ? 'Adicione funcionários à sua barbearia' : 'Opcional - você pode pular esta etapa'}</Text>
+        <Text style={styles.title}>Convidar Funcionários</Text>
+        <Text style={styles.subtitle}>{isFromManage ? 'Envie convites para funcionários se juntarem à sua barbearia' : 'Opcional - você pode pular esta etapa'}</Text>
       </View>
 
       <View style={styles.formContainer}>
@@ -210,7 +244,7 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
 
         {employees.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Funcionários Adicionados ({employees.length})</Text>
+            <Text style={styles.sectionTitle}>Convites a Enviar ({employees.length})</Text>
             <FlatList
               data={employees}
               renderItem={renderEmployee}
@@ -236,7 +270,7 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
               <ActivityIndicator color={theme.colors.background} />
             ) : (
               <Text style={styles.buttonText}>
-                {isFromManage ? 'Criar' : 'Continuar'}
+                {isFromManage ? 'Convidar' : 'Continuar'}
               </Text>
             )}
           </TouchableOpacity>

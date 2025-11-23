@@ -90,6 +90,11 @@ export default function CreateScheduleScreen({ navigation, route }: any) {
     setBreakingTimes(updatedBreaks);
   };
 
+  const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
   const handleFinish = async () => {
     if (selectedDays.length === 0) {
       Alert.alert('Erro', 'Selecione pelo menos um dia da semana');
@@ -104,17 +109,17 @@ export default function CreateScheduleScreen({ navigation, route }: any) {
     setLoading(true);
     try {
       const scheduleData = {
-        daysOfWeek: selectedDays,
-        openTime,
-        closeTime,
+        daysOfWeek: JSON.stringify(selectedDays),
+        openTime: timeToMinutes(openTime),
+        closeTime: timeToMinutes(closeTime),
         barbershopId,
         breakingTimes: breakingTimes.map(bt => ({
-          startingTime: bt.starting_time,
-          endingTime: bt.ending_time
+          startingTime: timeToMinutes(bt.starting_time),
+          endingTime: timeToMinutes(bt.ending_time)
         }))
       };
 
-      await fetch(`http://localhost:4000/api/schedules`, {
+      const response = await fetch(`http://localhost:4000/api/schedules`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -122,6 +127,12 @@ export default function CreateScheduleScreen({ navigation, route }: any) {
         },
         body: JSON.stringify(scheduleData)
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao criar horário');
+      }
       
       // Marca o onboarding como completo
       dispatch(completeOnboarding());
@@ -129,11 +140,11 @@ export default function CreateScheduleScreen({ navigation, route }: any) {
       Alert.alert(
         'Sucesso!',
         'Sua barbearia foi configurada com sucesso!',
-        [{ text: 'OK' }]
+        [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
       );
     } catch (error: any) {
       console.error('Erro ao criar horário:', error);
-      Alert.alert('Erro', 'Não foi possível criar o horário');
+      Alert.alert('Erro', error.message || 'Não foi possível criar o horário');
     } finally {
       setLoading(false);
     }
