@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { barbershopService } from '../services/api';
 import { theme } from '../styles/theme';
+import { getBarbershopIdOrError } from '../utils/barbershop';
 
 export default function EditBarbershopScreen({ navigation }: any) {
   const [name, setName] = useState('');
@@ -20,8 +21,7 @@ export default function EditBarbershopScreen({ navigation }: any) {
   const [referencePoint, setReferencePoint] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-
-  const barbershopId = '716f3577-4b85-4e25-977d-f0cfa2f4b356';
+  const [barbershopId, setBarbershopId] = useState<string | null>(null);
 
   useEffect(() => {
     loadBarbershopData();
@@ -29,14 +29,20 @@ export default function EditBarbershopScreen({ navigation }: any) {
 
   const loadBarbershopData = async () => {
     try {
-      const response = await barbershopService.getById(barbershopId);
+      const shopId = await getBarbershopIdOrError();
+      setBarbershopId(shopId);
+      
+      const response = await barbershopService.getById(shopId);
       const barbershop = response.barbershop;
       setName(barbershop.name);
       setFullAddress(barbershop.fullAddress);
       setNeighborhood(barbershop.neighborhood);
       setReferencePoint(barbershop.referencePoint || '');
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível carregar os dados da barbearia');
+      console.error('Erro ao carregar dados:', error);
+      if (error instanceof Error && error.message !== 'BarbershopId não encontrado') {
+        Alert.alert('Erro', 'Não foi possível carregar os dados da barbearia');
+      }
     } finally {
       setLoadingData(false);
     }
@@ -45,6 +51,11 @@ export default function EditBarbershopScreen({ navigation }: any) {
   const handleSave = async () => {
     if (!name || !fullAddress || !neighborhood) {
       Alert.alert('Erro', 'Preencha os campos obrigatórios');
+      return;
+    }
+
+    if (!barbershopId) {
+      Alert.alert('Erro', 'Barbearia não encontrada');
       return;
     }
 

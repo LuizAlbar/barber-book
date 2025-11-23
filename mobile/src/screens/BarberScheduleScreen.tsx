@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { employeeService } from '../services/api';
+import { getBarbershopIdOrError } from '../utils/barbershop';
 
 export default function BarberScheduleScreen({ navigation }: any) {
   const [barbers, setBarbers] = useState<any[]>([]);
@@ -14,12 +15,15 @@ export default function BarberScheduleScreen({ navigation }: any) {
 
   const loadBarbers = async () => {
     try {
-      const response = await employeeService.list('716f3577-4b85-4e25-977d-f0cfa2f4b356');
+      const barbershopId = await getBarbershopIdOrError();
+      const response = await employeeService.list(barbershopId);
       const barbersOnly = response.employees.filter((emp: any) => emp.role === 'BARBEIRO');
       setBarbers(barbersOnly);
     } catch (error) {
       console.error('Erro ao carregar barbeiros:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os barbeiros');
+      if (error instanceof Error && error.message !== 'BarbershopId não encontrado') {
+        Alert.alert('Erro', 'Não foi possível carregar os barbeiros');
+      }
     } finally {
       setLoading(false);
     }

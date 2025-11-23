@@ -14,8 +14,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { appointmentService, employeeService, serviceService, authService } from '../services/api';
+import { appointmentService, employeeService, serviceService } from '../services/api';
 import { theme } from '../styles/theme';
+import { getBarbershopIdOrError } from '../utils/barbershop';
 
 interface Employee {
   id: string;
@@ -54,22 +55,8 @@ export default function CreateManualAppointmentScreen({ navigation }: any) {
     try {
       setLoadingData(true);
       
-      // Buscar perfil do usuário para obter barbershopId
-      const profileResponse = await authService.getProfile();
-      let shopId = null;
-      
-      if (profileResponse.user.barbershops && profileResponse.user.barbershops.length > 0) {
-        shopId = profileResponse.user.barbershops[0].id;
-      } else if (profileResponse.user.employees && profileResponse.user.employees.length > 0) {
-        shopId = profileResponse.user.employees[0].barbershopId;
-      }
-      
-      if (!shopId) {
-        Alert.alert('Erro', 'Nenhuma barbearia encontrada para este usuário');
-        navigation.goBack();
-        return;
-      }
-      
+      // Buscar barbershopId do usuário logado
+      const shopId = await getBarbershopIdOrError();
       setBarbershopId(shopId);
       
       // Buscar funcionários e serviços
@@ -90,7 +77,10 @@ export default function CreateManualAppointmentScreen({ navigation }: any) {
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os dados necessários');
+      if (error instanceof Error && error.message !== 'BarbershopId não encontrado') {
+        Alert.alert('Erro', 'Não foi possível carregar os dados necessários');
+      }
+      navigation.goBack();
     } finally {
       setLoadingData(false);
     }

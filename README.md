@@ -26,4 +26,6 @@
 
 * [x] Revisar toda a interface do usuário (UI), mensagens do sistema e textos de ajuda para garantir que estejam **padronizados para o Português (pt-BR)**.
 
+### 🧹 Qualidade do Código
+* [x] Remover **trechos de código hardcoded** e substituí-los por configurações, variáveis de ambiente ou constantes centralizadas.
 ---

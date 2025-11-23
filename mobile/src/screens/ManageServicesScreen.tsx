@@ -10,16 +10,21 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { serviceService } from '../services/api';
 import { theme } from '../styles/theme';
+import { getBarbershopIdOrError } from '../utils/barbershop';
 
 export default function ManageServicesScreen({ navigation }: any) {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<{id: string, name: string} | null>(null);
+  const [barbershopId, setBarbershopId] = useState<string | null>(null);
 
   const loadServices = async () => {
     try {
-      const response = await serviceService.list('716f3577-4b85-4e25-977d-f0cfa2f4b356');
+      const shopId = await getBarbershopIdOrError();
+      setBarbershopId(shopId);
+      
+      const response = await serviceService.list(shopId);
       console.log('Serviços carregados:', response.services);
       setServices(response.services || []);
     } catch (error) {
@@ -105,7 +110,21 @@ export default function ManageServicesScreen({ navigation }: any) {
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Gerenciar Serviços</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('CreateServices', { barbershopId: '716f3577-4b85-4e25-977d-f0cfa2f4b356', isFromManage: true })}>
+        <TouchableOpacity 
+          onPress={async () => {
+            if (!barbershopId) {
+              try {
+                const shopId = await getBarbershopIdOrError();
+                setBarbershopId(shopId);
+                navigation.navigate('CreateServices', { barbershopId: shopId, isFromManage: true });
+              } catch (error) {
+                // Erro já foi tratado na função
+              }
+            } else {
+              navigation.navigate('CreateServices', { barbershopId, isFromManage: true });
+            }
+          }}
+        >
           <Ionicons name="add" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>

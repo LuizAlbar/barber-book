@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { scheduleService } from '../services/api';
+import { getBarbershopIdOrError } from '../utils/barbershop';
 
 const DAYS = [
   { id: 0, name: 'Domingo' },
@@ -65,6 +66,7 @@ export default function BarbershopScheduleScreen({ navigation }: any) {
     }
 
     try {
+      const barbershopId = await getBarbershopIdOrError();
       const daysOfWeek = JSON.stringify(openDays.map(s => s.id));
       const openTime = timeToMinutes(openDays[0].openTime); // Usando primeiro dia como padrão
       const closeTime = timeToMinutes(openDays[0].closeTime);
@@ -72,7 +74,7 @@ export default function BarbershopScheduleScreen({ navigation }: any) {
       const breakEnd = timeToMinutes(openDays[0].breakEnd);
 
       const scheduleData = {
-        barbershopId: '716f3577-4b85-4e25-977d-f0cfa2f4b356',
+        barbershopId,
         daysOfWeek,
         openTime,
         closeTime,
@@ -87,7 +89,10 @@ export default function BarbershopScheduleScreen({ navigation }: any) {
       Alert.alert('Sucesso', 'Horários salvos com sucesso!');
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar os horários');
+      console.error('Erro ao salvar horários:', error);
+      if (error instanceof Error && error.message !== 'BarbershopId não encontrado') {
+        Alert.alert('Erro', 'Não foi possível salvar os horários');
+      }
     }
   };
 
