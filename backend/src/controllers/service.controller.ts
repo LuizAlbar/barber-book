@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 import { CreateServiceInput, UpdateServiceInput, createServiceSchema, updateServiceSchema } from '../schemas/service.schema.js';
 import { formatZodError } from '../utils/validation.js';
+import { hasAccessToBarbershop } from '../utils/barbershop.js';
 
 export async function create(
   request: FastifyRequest<{ Body: CreateServiceInput }>,
@@ -51,14 +52,8 @@ export async function list(
     const limit = 20;
     const skip = (page - 1) * limit;
 
-    const barbershop = await prisma.barbershop.findFirst({
-      where: {
-        id: barbershopId,
-        ownerId: request.userId
-      }
-    });
-
-    if (!barbershop) {
+    const hasAccess = await hasAccessToBarbershop(request.userId!, barbershopId);
+    if (!hasAccess) {
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Not authorized to view services from this barbershop'
