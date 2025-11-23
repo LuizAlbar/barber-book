@@ -1,43 +1,134 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { capitalService } from '../services/api';
+import { capitalService, authService } from '../services/api';
 import AddCapitalModal from '../components/AddCapitalModal';
 import { theme } from '../styles/theme';
+
+interface MonthOption {
+  year: number;
+  month: number;
+  label: string;
+  isClosingMonth: boolean;
+}
 
 export default function DashboardScreen({ navigation }: any) {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'PROFIT' | 'COST'>('PROFIT');
   const [capitalData, setCapitalData] = useState<any[]>([]);
+  const [allCapitalData, setAllCapitalData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{id: string, description: string} | null>(null);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<{year: number, month: number}>(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+  const [barbershopId, setBarbershopId] = useState<string | null>(null);
   const token = useSelector((state: RootState) => state.auth.token);
+
+  // Calcular mês de fechamento (último mês completo)
+  const getClosingMonth = (): {year: number, month: number} => {
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return { year: lastMonth.getFullYear(), month: lastMonth.getMonth() };
+  };
+
+  // Gerar lista de meses disponíveis (últimos 12 meses)
+  const generateMonthOptions = (): MonthOption[] => {
+    const options: MonthOption[] = [];
+    const now = new Date();
+    const closingMonth = getClosingMonth();
+    
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const isClosingMonth = year === closingMonth.year && month === closingMonth.month;
+      
+      options.push({
+        year,
+        month,
+        label: date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
+        isClosingMonth,
+      });
+    }
+    
+    return options;
+  };
 
   const loadCapitalData = async () => {
     try {
-      const response = await capitalService.list('716f3577-4b85-4e25-977d-f0cfa2f4b356');
-      setCapitalData(response.capital || []);
+      setLoading(true);
+      
+      // Buscar barbershopId do perfil do usuário
+      let shopId = barbershopId;
+      
+      if (!shopId) {
+        const profileResponse = await authService.getProfile();
+        
+        if (profileResponse.user.barbershops && profileResponse.user.barbershops.length > 0) {
+          shopId = profileResponse.user.barbershops[0].id;
+        } else if (profileResponse.user.employees && profileResponse.user.employees.length > 0) {
+          shopId = profileResponse.user.employees[0].barbershopId;
+        }
+        
+        if (!shopId) {
+          Alert.alert('Erro', 'Nenhuma barbearia encontrada para este usuário');
+          setLoading(false);
+          return;
+        }
+        
+        setBarbershopId(shopId);
+      }
+      
+      // Carregar todos os dados (sem filtro de mês na API)
+      const response = await capitalService.list(shopId);
+      setAllCapitalData(response.capital || []);
+      
+      // Filtrar por mês selecionado
+      filterDataByMonth(response.capital || [], selectedMonth);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
+      Alert.alert('Erro', 'Não foi possível carregar os dados');
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterDataByMonth = (data: any[], month: {year: number, month: number}) => {
+    const filtered = data.filter(item => {
+      const itemDate = new Date(item.datetime);
+      return itemDate.getFullYear() === month.year && itemDate.getMonth() === month.month;
+    });
+    setCapitalData(filtered);
   };
 
   useEffect(() => {
     loadCapitalData();
   }, []);
 
+  useEffect(() => {
+    if (allCapitalData.length > 0) {
+      filterDataByMonth(allCapitalData, selectedMonth);
+    }
+  }, [selectedMonth]);
+
   const handleAddCapital = async (data: { value: number; description: string; type: string }) => {
+    if (!barbershopId) {
+      Alert.alert('Erro', 'Barbearia não encontrada');
+      return;
+    }
+    
     try {
       await capitalService.create({
         value: data.value,
         type: data.type as 'PROFIT' | 'COST',
         description: data.description,
-        barbershopId: '716f3577-4b85-4e25-977d-f0cfa2f4b356' // TODO: pegar barbershopId real do Redux
+        barbershopId: barbershopId
       });
       Alert.alert('Sucesso', `${data.type === 'PROFIT' ? 'Receita' : 'Despesa'} adicionada com sucesso!`);
       loadCapitalData(); // Recarregar dados
@@ -69,18 +160,33 @@ export default function DashboardScreen({ navigation }: any) {
     }
   };
 
+  const monthOptions = generateMonthOptions();
+  const closingMonth = getClosingMonth();
+  const isSelectedClosingMonth = selectedMonth.year === closingMonth.year && selectedMonth.month === closingMonth.month;
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.headerTitle}>Dashboard</Text>
-          <Text style={styles.headerDate}>
-            {new Date().toLocaleDateString('pt-BR', {
-              day: '2-digit',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </Text>
+          <TouchableOpacity 
+            style={[styles.monthSelector, isSelectedClosingMonth && styles.monthSelectorClosing]}
+            onPress={() => setShowMonthPicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
+            <Text style={[styles.monthSelectorText, isSelectedClosingMonth && styles.monthSelectorTextClosing]}>
+              {new Date(selectedMonth.year, selectedMonth.month, 1).toLocaleDateString('pt-BR', {
+                month: 'long',
+                year: 'numeric',
+              })}
+            </Text>
+            {isSelectedClosingMonth && (
+              <View style={styles.closingBadge}>
+                <Text style={styles.closingBadgeText}>Fechamento</Text>
+              </View>
+            )}
+            <Ionicons name="chevron-down" size={16} color="#999" />
+          </TouchableOpacity>
         </View>
         <TouchableOpacity onPress={loadCapitalData}>
           <Ionicons name="refresh-outline" size={32} color={theme.colors.primary} />
@@ -250,6 +356,62 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
         </View>
       </Modal>
+
+      {/* Modal de Seleção de Mês */}
+      <Modal
+        visible={showMonthPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMonthPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Selecione o Mês</Text>
+              <TouchableOpacity onPress={() => setShowMonthPicker(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={monthOptions}
+              renderItem={({ item }) => {
+                const isSelected = selectedMonth.year === item.year && selectedMonth.month === item.month;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.monthOption,
+                      isSelected && styles.monthOptionSelected,
+                      item.isClosingMonth && styles.monthOptionClosing
+                    ]}
+                    onPress={() => {
+                      setSelectedMonth({ year: item.year, month: item.month });
+                      setShowMonthPicker(false);
+                    }}
+                  >
+                    <View style={styles.monthOptionContent}>
+                      <Text style={[
+                        styles.monthOptionText,
+                        isSelected && styles.monthOptionTextSelected
+                      ]}>
+                        {item.label}
+                      </Text>
+                      {item.isClosingMonth && (
+                        <View style={styles.closingBadgeSmall}>
+                          <Text style={styles.closingBadgeTextSmall}>Mês de Fechamento</Text>
+                        </View>
+                      )}
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark" size={24} color={theme.colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+              keyExtractor={(item, index) => `${item.year}-${item.month}-${index}`}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -270,10 +432,85 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.text,
   },
-  headerDate: {
+  headerLeft: {
+    flex: 1,
+  },
+  monthSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.md,
+    gap: theme.spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  monthSelectorClosing: {
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    backgroundColor: 'rgba(255, 203, 36, 0.2)',
+  },
+  monthSelectorText: {
     fontSize: theme.fontSize.sm,
-    color: '#999',
-    marginTop: theme.spacing.xs,
+    color: theme.colors.text,
+    fontWeight: '500',
+  },
+  monthSelectorTextClosing: {
+    color: theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  closingBadge: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+    marginLeft: theme.spacing.xs,
+  },
+  closingBadgeText: {
+    color: theme.colors.background,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  monthOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  monthOptionSelected: {
+    backgroundColor: 'rgba(255, 203, 36, 0.2)',
+  },
+  monthOptionClosing: {
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.primary,
+  },
+  monthOptionContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  monthOptionText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+  },
+  monthOptionTextSelected: {
+    color: theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  closingBadgeSmall: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: 2,
+    borderRadius: theme.borderRadius.sm,
+  },
+  closingBadgeTextSmall: {
+    color: theme.colors.background,
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   content: {
     flex: 1,

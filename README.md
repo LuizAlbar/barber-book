@@ -14,7 +14,7 @@
 
 ### 📊 Dashboard e Relatórios
 
-* [ ] No **Dashboard**, adicionar uma funcionalidade de **Filtro Mensal** (seleção de mês) e destacar o **Mês de Fechamento** (função que indica o período contábil finalizado/em análise).
+* [x] No **Dashboard**, adicionar uma funcionalidade de **Filtro Mensal** (seleção de mês) e destacar o **Mês de Fechamento** (função que indica o período contábil finalizado/em análise).
 
 
 ### 🧑‍💻 Gestão de Funcionários
