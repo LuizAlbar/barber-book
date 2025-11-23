@@ -17,7 +17,6 @@ import { RootState } from '../store';
 import { theme } from '../styles/theme';
 
 interface Employee {
-  phone_number: string;
   role: 'BARBEIRO' | 'ATENDENTE';
   user_email: string;
 }
@@ -26,14 +25,13 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
   const { barbershopId, isFromManage } = route.params || {};
   const token = useSelector((state: RootState) => state.auth.token);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [role, setRole] = useState<'BARBEIRO' | 'ATENDENTE'>('BARBEIRO');
   const [loading, setLoading] = useState(false);
 
   const addEmployee = () => {
-    if (!phoneNumber || !userEmail) {
-      Alert.alert('Erro', 'Preencha todos os campos do funcionário');
+    if (!userEmail) {
+      Alert.alert('Erro', 'Preencha o email do funcionário');
       return;
     }
 
@@ -44,13 +42,11 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
     }
 
     const newEmployee: Employee = {
-      phone_number: phoneNumber,
       role,
       user_email: userEmail,
     };
 
     setEmployees([...employees, newEmployee]);
-    setPhoneNumber('');
     setUserEmail('');
     setRole('BARBEIRO');
   };
@@ -74,7 +70,6 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
       for (const employee of employees) {
         try {
           await invitationService.create({
-            phoneNumber: employee.phone_number,
             role: employee.role,
             userEmail: employee.user_email,
             barbershopId
@@ -135,7 +130,7 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
       <View style={styles.employeeInfo}>
         <Text style={styles.employeeName}>{item.user_email}</Text>
         <Text style={styles.employeeDetails}>
-          {item.phone_number} • {item.role}
+          {item.role}
         </Text>
       </View>
       <TouchableOpacity onPress={() => removeEmployee(index)}>
@@ -175,18 +170,6 @@ export default function CreateEmployeesScreen({ navigation, route }: any) {
             onChangeText={setUserEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Ionicons name="call-outline" size={24} color={theme.colors.primary} />
-          <TextInput
-            style={styles.input}
-            placeholder="Telefone"
-            placeholderTextColor="#999"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="phone-pad"
           />
         </View>
 

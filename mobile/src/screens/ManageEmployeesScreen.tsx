@@ -68,7 +68,9 @@ export default function ManageEmployeesScreen({ navigation }: any) {
       <View style={styles.employeeInfo}>
         <Text style={styles.employeeName}>{item.user?.name || item.user?.email || 'Nome não disponível'}</Text>
         <Text style={styles.employeeDetails}>{item.user?.email || 'Email não disponível'}</Text>
-        <Text style={styles.employeeDetails}>{item.phoneNumber || item.phone_number} • {item.role}</Text>
+        <Text style={styles.employeeDetails}>
+          {item.user?.phone || 'Telefone não cadastrado'} • {item.role}
+        </Text>
       </View>
       <TouchableOpacity
         style={styles.removeButton}

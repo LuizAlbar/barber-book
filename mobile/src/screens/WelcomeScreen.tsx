@@ -20,7 +20,6 @@ import { completeOnboarding } from '../store/authSlice';
 interface Invitation {
   id: string;
   userEmail: string;
-  phoneNumber: string;
   role: 'BARBEIRO' | 'ATENDENTE';
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   createdAt: string;
