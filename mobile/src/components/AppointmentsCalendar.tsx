@@ -176,9 +176,7 @@ export default function AppointmentsCalendar({
     <View style={styles.appointmentCard}>
       <View style={styles.appointmentHeader}>
         <Text style={styles.clientName}>{item.clientName}</Text>
-        {viewMode === 'all' && (
-          <Text style={styles.barberName}>Barbeiro: {item.employee.user.name}</Text>
-        )}
+        <Text style={styles.barberName}>Barbeiro: {item.employee.user.name}</Text>
       </View>
       <Text style={styles.serviceName}>{item.service.name}</Text>
       <View style={styles.appointmentFooter}>

@@ -34,7 +34,6 @@ export default function AppointmentsScreen({ navigation }: any) {
   const [showCalendar, setShowCalendar] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
 
-  const today = new Date().toISOString().split('T')[0];
   const pendingAppointments = appointments.filter(apt => apt.status === 'PENDING');
   const completedAppointments = appointments.filter(apt => apt.status === 'COMPLETED');
 
@@ -88,8 +87,13 @@ export default function AppointmentsScreen({ navigation }: any) {
       const allResponse = await appointmentService.list({ barbershopId });
       setAllAppointments(allResponse.appointments || []);
       
-      // Buscar agendamentos filtrados para a lista
-      const response = await appointmentService.list({ barbershopId, employeeId: filterEmployeeId });
+      // Buscar agendamentos filtrados para a lista (do dia atual)
+      const today = new Date().toISOString().split('T')[0];
+      const response = await appointmentService.list({ 
+        barbershopId, 
+        employeeId: filterEmployeeId,
+        date: today 
+      });
       console.log('📋 Agendamentos recebidos:', response);
       setAppointments(response.appointments);
     } catch (error) {
