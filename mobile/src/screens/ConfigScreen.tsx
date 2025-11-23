@@ -148,6 +148,17 @@ export default function ConfigScreen({ navigation }: any) {
             </View>
             <Ionicons name="chevron-forward" size={24} color="#999" />
           </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('CreateManualAppointment')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="calendar-outline" size={24} color={theme.colors.primary} />
+              <Text style={styles.menuItemText}>Agendamento Manual</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#999" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>

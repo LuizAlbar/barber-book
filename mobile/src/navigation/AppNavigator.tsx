@@ -25,6 +25,7 @@ import BarbershopScheduleScreen from '../screens/BarbershopScheduleScreen';
 import BarberScheduleScreen from '../screens/BarberScheduleScreen';
 import BarberScheduleDetailScreen from '../screens/BarberScheduleDetailScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import CreateManualAppointmentScreen from '../screens/CreateManualAppointmentScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -188,6 +189,11 @@ export default function AppNavigator() {
             <Stack.Screen 
               name="BarberScheduleDetail" 
               component={BarberScheduleDetailScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="CreateManualAppointment" 
+              component={CreateManualAppointmentScreen}
               options={{ headerShown: false }}
             />
           </>
