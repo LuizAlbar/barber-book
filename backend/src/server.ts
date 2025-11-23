@@ -9,6 +9,7 @@ import { appointmentRoutes } from './routes/appointment.routes.js';
 import { capitalRoutes } from './routes/capital.routes.js';
 import { scheduleRoutes } from './routes/schedule.routes.js';
 import { availabilityRoutes } from './routes/availability.routes.js';
+import { invitationRoutes } from './routes/invitation.routes.js';
 
 const app = Fastify({
   logger: true
@@ -36,6 +37,7 @@ await app.register(appointmentRoutes, { prefix: '/api/appointments' });
 await app.register(capitalRoutes, { prefix: '/api/capital' });
 await app.register(scheduleRoutes, { prefix: '/api/schedules' });
 await app.register(availabilityRoutes, { prefix: '/api/availability' });
+await app.register(invitationRoutes, { prefix: '/api/invitations' });
 
 const PORT = Number(process.env.PORT) || 4000;
 const HOST = '0.0.0.0';

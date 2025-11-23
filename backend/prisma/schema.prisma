@@ -17,6 +17,7 @@ model User {
   phone       String?
   barbershops Barbershop[]
   employees   Employee[]
+  invitations Invitation[]
 
   @@map("users")
 }
@@ -35,6 +36,7 @@ model Barbershop {
   capital         Capital[]
   employees       Employee[]
   services        Service[]
+  invitations     Invitation[]
 
   @@map("barbershops")
 }
@@ -141,4 +143,28 @@ enum AppointmentStatus {
 enum CapitalType {
   PROFIT
   COST
+}
+
+model Invitation {
+  id           String        @id @default(uuid())
+  userEmail    String        @map("user_email")
+  phoneNumber  String        @map("phone_number")
+  role         EmployeeRole
+  status       InvitationStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  barbershopId String        @map("barbershop_id")
+  userId       String?       @map("user_id")
+  barbershop   Barbershop    @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userEmail, barbershopId, status])
+  @@index([userEmail, barbershopId])
+  @@map("invitations")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
