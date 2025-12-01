@@ -7,13 +7,6 @@ import { capitalService, authService } from '../services/api';
 import AddCapitalModal from '../components/AddCapitalModal';
 import { theme } from '../styles/theme';
 
-interface MonthOption {
-  year: number;
-  month: number;
-  label: string;
-  isClosingMonth: boolean;
-}
-
 export default function DashboardScreen({ navigation }: any) {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'PROFIT' | 'COST'>('PROFIT');
@@ -22,42 +15,35 @@ export default function DashboardScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{id: string, description: string} | null>(null);
-  const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<{year: number, month: number}>(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
   const [barbershopId, setBarbershopId] = useState<string | null>(null);
-  const token = useSelector((state: RootState) => state.auth.token);
+  const [availableMonths, setAvailableMonths] = useState<Array<{year: number, month: number, label: string}>>([]);
+
+  // Gerar lista de meses disponíveis (últimos 12 meses)
+  const generateAvailableMonths = (): Array<{year: number, month: number, label: string}> => {
+    const months: Array<{year: number, month: number, label: string}> = [];
+    const now = new Date();
+    
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        year: date.getFullYear(),
+        month: date.getMonth(),
+        label: date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
+      });
+    }
+    
+    return months.reverse(); // Ordenar do mais antigo para o mais recente
+  };
 
   // Calcular mês de fechamento (último mês completo)
   const getClosingMonth = (): {year: number, month: number} => {
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     return { year: lastMonth.getFullYear(), month: lastMonth.getMonth() };
-  };
-
-  // Gerar lista de meses disponíveis (últimos 12 meses)
-  const generateMonthOptions = (): MonthOption[] => {
-    const options: MonthOption[] = [];
-    const now = new Date();
-    const closingMonth = getClosingMonth();
-    
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const isClosingMonth = year === closingMonth.year && month === closingMonth.month;
-      
-      options.push({
-        year,
-        month,
-        label: date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
-        isClosingMonth,
-      });
-    }
-    
-    return options;
   };
 
   const loadCapitalData = async () => {
@@ -108,6 +94,28 @@ export default function DashboardScreen({ navigation }: any) {
   };
 
   useEffect(() => {
+    // Inicializar lista de meses disponíveis
+    const months = generateAvailableMonths();
+    setAvailableMonths(months);
+    
+    // Verificar se o mês atual está na lista, se não estiver, adicionar
+    const currentMonth = { 
+      year: new Date().getFullYear(), 
+      month: new Date().getMonth(),
+      label: new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    };
+    
+    const exists = months.some(m => 
+      m.year === currentMonth.year && m.month === currentMonth.month
+    );
+    
+    if (!exists) {
+      setAvailableMonths(prev => [...prev, currentMonth].sort((a, b) => {
+        if (a.year === b.year) return a.month - b.month;
+        return a.year - b.year;
+      }));
+    }
+    
     loadCapitalData();
   }, []);
 
@@ -160,40 +168,122 @@ export default function DashboardScreen({ navigation }: any) {
     }
   };
 
-  const monthOptions = generateMonthOptions();
+  // Navegar para o mês anterior
+  const goToPreviousMonth = () => {
+    const currentIndex = availableMonths.findIndex(
+      month => month.year === selectedMonth.year && month.month === selectedMonth.month
+    );
+    
+    if (currentIndex > 0) {
+      const previousMonth = availableMonths[currentIndex - 1];
+      setSelectedMonth({ year: previousMonth.year, month: previousMonth.month });
+    }
+  };
+
+  // Navegar para o próximo mês
+  const goToNextMonth = () => {
+    const currentIndex = availableMonths.findIndex(
+      month => month.year === selectedMonth.year && month.month === selectedMonth.month
+    );
+    
+    if (currentIndex < availableMonths.length - 1) {
+      const nextMonth = availableMonths[currentIndex + 1];
+      setSelectedMonth({ year: nextMonth.year, month: nextMonth.month });
+    }
+  };
+
+  // Verificar se é mês de fechamento
   const closingMonth = getClosingMonth();
   const isSelectedClosingMonth = selectedMonth.year === closingMonth.year && selectedMonth.month === closingMonth.month;
 
+  // Verificar se há mês anterior disponível
+  const hasPreviousMonth = () => {
+    const currentIndex = availableMonths.findIndex(
+      month => month.year === selectedMonth.year && month.month === selectedMonth.month
+    );
+    return currentIndex > 0;
+  };
+
+  // Verificar se há próximo mês disponível
+  const hasNextMonth = () => {
+    const currentIndex = availableMonths.findIndex(
+      month => month.year === selectedMonth.year && month.month === selectedMonth.month
+    );
+    return currentIndex < availableMonths.length - 1;
+  };
+
+  // Obter label do mês atual
+  const getCurrentMonthLabel = () => {
+    const monthData = availableMonths.find(
+      month => month.year === selectedMonth.year && month.month === selectedMonth.month
+    );
+    
+    if (monthData) {
+      return monthData.label;
+    }
+    
+    return new Date(selectedMonth.year, selectedMonth.month, 1)
+      .toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  };
+
   return (
     <View style={styles.container}>
+      {/* Header simplificado */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Dashboard</Text>
-          <TouchableOpacity 
-            style={[styles.monthSelector, isSelectedClosingMonth && styles.monthSelectorClosing]}
-            onPress={() => setShowMonthPicker(true)}
-          >
-            <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
-            <Text style={[styles.monthSelectorText, isSelectedClosingMonth && styles.monthSelectorTextClosing]}>
-              {new Date(selectedMonth.year, selectedMonth.month, 1).toLocaleDateString('pt-BR', {
-                month: 'long',
-                year: 'numeric',
-              })}
-            </Text>
-            {isSelectedClosingMonth && (
-              <View style={styles.closingBadge}>
-                <Text style={styles.closingBadgeText}>Fechamento</Text>
-              </View>
-            )}
-            <Ionicons name="chevron-down" size={16} color="#999" />
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity onPress={loadCapitalData}>
-          <Ionicons name="refresh-outline" size={32} color={theme.colors.primary} />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Dashboard</Text>
       </View>
       
       <ScrollView style={styles.content}>
+        {/* Filtro de meses como carrossel */}
+        <View style={styles.monthFilterContainer}>
+          <TouchableOpacity 
+            style={[styles.monthNavButton, !hasPreviousMonth() && styles.monthNavButtonDisabled]}
+            onPress={goToPreviousMonth}
+            disabled={!hasPreviousMonth()}
+          >
+            <Ionicons 
+              name="chevron-back" 
+              size={24} 
+              color={hasPreviousMonth() ? theme.colors.primary : '#ccc'} 
+            />
+          </TouchableOpacity>
+          
+          <View style={styles.currentMonthWrapper}>
+            <View style={[styles.currentMonthContainer, isSelectedClosingMonth && styles.closingMonthContainer]}>
+              <View style={styles.currentMonthContent}>
+                <Ionicons 
+                  name="calendar-outline" 
+                  size={20} 
+                  color={isSelectedClosingMonth ? '#4CAF50' : theme.colors.primary} 
+                />
+                <Text style={[
+                  styles.currentMonthText, 
+                  isSelectedClosingMonth && styles.closingMonthText
+                ]}>
+                  {getCurrentMonthLabel()}
+                </Text>
+                {isSelectedClosingMonth && (
+                  <View style={styles.closingIndicator}>
+                    <View style={styles.closingDot} />
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.monthNavButton, !hasNextMonth() && styles.monthNavButtonDisabled]}
+            onPress={goToNextMonth}
+            disabled={!hasNextMonth()}
+          >
+            <Ionicons 
+              name="chevron-forward" 
+              size={24} 
+              color={hasNextMonth() ? theme.colors.primary : '#ccc'} 
+            />
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.summaryCards}>
           <View style={styles.summaryCard}>
             <Ionicons name="trending-up" size={32} color={theme.colors.success} />
@@ -356,62 +446,6 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
         </View>
       </Modal>
-
-      {/* Modal de Seleção de Mês */}
-      <Modal
-        visible={showMonthPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowMonthPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Selecione o Mês</Text>
-              <TouchableOpacity onPress={() => setShowMonthPicker(false)}>
-                <Ionicons name="close" size={24} color={theme.colors.text} />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={monthOptions}
-              renderItem={({ item }) => {
-                const isSelected = selectedMonth.year === item.year && selectedMonth.month === item.month;
-                return (
-                  <TouchableOpacity
-                    style={[
-                      styles.monthOption,
-                      isSelected && styles.monthOptionSelected,
-                      item.isClosingMonth && styles.monthOptionClosing
-                    ]}
-                    onPress={() => {
-                      setSelectedMonth({ year: item.year, month: item.month });
-                      setShowMonthPicker(false);
-                    }}
-                  >
-                    <View style={styles.monthOptionContent}>
-                      <Text style={[
-                        styles.monthOptionText,
-                        isSelected && styles.monthOptionTextSelected
-                      ]}>
-                        {item.label}
-                      </Text>
-                      {item.isClosingMonth && (
-                        <View style={styles.closingBadgeSmall}>
-                          <Text style={styles.closingBadgeTextSmall}>Mês de Fechamento</Text>
-                        </View>
-                      )}
-                    </View>
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={24} color={theme.colors.primary} />
-                    )}
-                  </TouchableOpacity>
-                );
-              }}
-              keyExtractor={(item, index) => `${item.year}-${item.month}-${index}`}
-            />
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -422,95 +456,74 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
   },
   headerTitle: {
     fontSize: theme.fontSize.xl,
     fontWeight: 'bold',
     color: theme.colors.text,
   },
-  headerLeft: {
-    flex: 1,
-  },
-  monthSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.md,
-    gap: theme.spacing.xs,
-    alignSelf: 'flex-start',
-  },
-  monthSelectorClosing: {
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    backgroundColor: 'rgba(255, 203, 36, 0.2)',
-  },
-  monthSelectorText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
-    fontWeight: '500',
-  },
-  monthSelectorTextClosing: {
-    color: theme.colors.primary,
-    fontWeight: 'bold',
-  },
-  closingBadge: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.xs,
-    paddingVertical: 2,
-    borderRadius: theme.borderRadius.sm,
-    marginLeft: theme.spacing.xs,
-  },
-  closingBadgeText: {
-    color: theme.colors.background,
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  monthOption: {
+  // Estilos do filtro de meses - versão clean
+  monthFilterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
-  monthOptionSelected: {
-    backgroundColor: 'rgba(255, 203, 36, 0.2)',
+  monthNavButton: {
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  monthOptionClosing: {
-    borderLeftWidth: 3,
-    borderLeftColor: theme.colors.primary,
+  monthNavButtonDisabled: {
+    opacity: 0.3,
   },
-  monthOptionContent: {
+  currentMonthWrapper: {
     flex: 1,
+    alignItems: 'center',
+  },
+  currentMonthContainer: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  closingMonthContainer: {
+    // Estilo sutil para mês de fechamento - apenas cor diferente no texto
+  },
+  currentMonthContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
+    position: 'relative',
   },
-  monthOptionText: {
+  currentMonthText: {
     fontSize: theme.fontSize.md,
     color: theme.colors.text,
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
-  monthOptionTextSelected: {
-    color: theme.colors.primary,
-    fontWeight: 'bold',
+  closingMonthText: {
+    color: '#4CAF50', // Verde suave para indicar mês de fechamento
+    fontWeight: '600',
   },
-  closingBadgeSmall: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.xs,
-    paddingVertical: 2,
-    borderRadius: theme.borderRadius.sm,
+  // Indicador sutil para mês de fechamento
+  closingIndicator: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
   },
-  closingBadgeTextSmall: {
-    color: theme.colors.background,
-    fontSize: 10,
-    fontWeight: 'bold',
+  closingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+    borderWidth: 1,
+    borderColor: '#FFF',
   },
   content: {
     flex: 1,
@@ -518,6 +531,7 @@ const styles = StyleSheet.create({
   summaryCards: {
     flexDirection: 'row',
     padding: theme.spacing.lg,
+    paddingTop: 0,
     gap: theme.spacing.md,
   },
   summaryCard: {
@@ -540,6 +554,7 @@ const styles = StyleSheet.create({
   },
   section: {
     padding: theme.spacing.lg,
+    paddingTop: 0,
   },
   sectionTitle: {
     fontSize: theme.fontSize.lg,

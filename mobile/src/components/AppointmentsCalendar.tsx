@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   weekDayText: {
     fontSize: theme.fontSize.sm,
     fontWeight: 'bold',
-    color: '#999',
+    color: '#ffffffff',
   },
   calendarGrid: {
     flexDirection: 'row',
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   dayTextInactive: {
-    color: '#666',
+    color: '#ffffffff',
   },
   appointmentsIndicator: {
     flexDirection: 'row',
