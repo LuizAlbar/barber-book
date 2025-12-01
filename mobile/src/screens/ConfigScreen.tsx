@@ -204,8 +204,8 @@ export default function ConfigScreen({ navigation }: any) {
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={handleLogout} activeOpacity={0.7}>
             <View style={styles.menuItemLeft}>
-              <Ionicons name="log-out-outline" size={24} color={theme.colors.error} />
-              <Text style={[styles.menuItemText, { color: theme.colors.error }]}>Sair</Text>
+              <Ionicons name="log-out-outline" size={24} color={theme.colors.primary} />
+              <Text style={[styles.menuItemText, { color: theme.colors.primary }]}>Sair</Text>
             </View>
           </TouchableOpacity>
         </View>
