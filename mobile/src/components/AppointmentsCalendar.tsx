@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.sm,
   },
   selectedCell: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#c09b20ff',
     borderRadius: theme.borderRadius.sm,
   },
   dayText: {
